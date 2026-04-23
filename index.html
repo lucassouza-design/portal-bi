@@ -150,6 +150,10 @@
       <p class="sub">Acesse com suas credenciais corporativas</p>
       <div class="field"><label>Usuário</label><input type="text" id="input-user" placeholder="seu.usuario" autocomplete="off"/></div>
       <div class="field"><label>Senha</label><input type="password" id="input-pass" placeholder="••••••••"/></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <input type="checkbox" id="remember-me" style="width:16px;height:16px;accent-color:var(--navy);cursor:pointer;">
+        <label for="remember-me" style="font-size:13px;color:var(--muted);cursor:pointer;user-select:none;">Lembrar usuário</label>
+      </div>
       <div id="error-msg">Usuário ou senha incorretos.</div>
       <button class="btn-login" onclick="doLogin()">Entrar</button>
     </div>
@@ -325,10 +329,13 @@ function doLogin() {
   const u = document.getElementById("input-user").value.trim();
   const p = document.getElementById("input-pass").value.trim();
   const err = document.getElementById("error-msg");
+  const remember = document.getElementById("remember-me") ? document.getElementById("remember-me").checked : false;
 
   // Admin
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     err.style.display="none";
+    if (remember) localStorage.setItem("mcpack_remember_user", u);
+    else localStorage.removeItem("mcpack_remember_user");
     document.getElementById("login-screen").style.display="none";
     document.getElementById("admin-screen").style.display="flex";
     renderAdminTable();
@@ -338,6 +345,8 @@ function doLogin() {
   const users = getUsers();
   if (users[u] && users[u].senha === p) {
     err.style.display="none";
+    if (remember) localStorage.setItem("mcpack_remember_user", u);
+    else localStorage.removeItem("mcpack_remember_user");
     currentUser = u;
     localStorage.setItem("mcpack_user", u);
     localStorage.setItem("mcpack_page", "");
@@ -393,8 +402,11 @@ function doLogout() {
   document.getElementById("report-iframe").src="";
   document.getElementById("portal-screen").style.display="none";
   document.getElementById("login-screen").style.display="flex";
-  document.getElementById("input-user").value="";
+  // Restaura usuário salvo se "lembrar" estiver ativo
+  const savedUser = localStorage.getItem("mcpack_remember_user");
+  document.getElementById("input-user").value = savedUser || "";
   document.getElementById("input-pass").value="";
+  if (savedUser) setTimeout(() => document.getElementById("input-pass").focus(), 100);
 }
 
 // ── Inatividade 30 min ──
