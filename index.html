@@ -98,7 +98,7 @@
   .admin-card h3 { font-size:15px; font-weight:700; color:var(--text); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
   .admin-table { width:100%; border-collapse:collapse; font-size:13px; }
   .admin-table th { text-align:left; padding:8px 12px; font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid var(--border); }
-  .admin-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:top; }
+  .admin-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
   .admin-table tr:last-child td { border-bottom:none; }
   .admin-table tr:hover td { background:rgba(26,79,160,0.04); }
   .badge-pages { display:flex; flex-wrap:wrap; gap:4px; }
@@ -111,6 +111,19 @@
   .btn-add:hover { opacity:0.88; }
   .btn-admin-logout { background:transparent; border:1px solid rgba(255,255,255,0.18); border-radius:7px; padding:5px 14px; color:rgba(255,255,255,0.6); font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s; }
   .btn-admin-logout:hover { border-color:var(--danger); color:var(--danger); }
+
+  /* TOGGLE ATIVO/INATIVO */
+  .toggle-wrap { display:flex; align-items:center; gap:8px; }
+  .toggle { position:relative; display:inline-block; width:38px; height:22px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:22px; cursor:pointer; transition:background 0.2s; }
+  .toggle-slider:before { content:''; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:transform 0.2s; }
+  .toggle input:checked + .toggle-slider { background:#22c55e; }
+  .toggle input:checked + .toggle-slider:before { transform:translateX(16px); }
+  .toggle input:disabled + .toggle-slider { opacity:0.45; cursor:not-allowed; }
+  .toggle-label { font-size:12px; font-weight:500; }
+  .toggle-label.ativo { color:#22c55e; }
+  .toggle-label.inativo { color:var(--muted); }
 
   /* MODAL */
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center; }
@@ -149,7 +162,7 @@
 <div id="login-screen">
   <div class="login-left">
     <div class="login-left-content">
-      <img src="LOGO_BASE64_PLACEHOLDER" alt="MCPack" onerror="this.style.display='none'">
+      <img src="https://raw.githubusercontent.com/lucassouza-design/portal-bi/main/logo_mcpack_25-07.png">
       <h2>Portal de Business Intelligence</h2>
       <p>Dashboards e relatórios gerenciais para acompanhamento estratégico do negócio.</p>
       <div class="login-accent"></div>
@@ -176,7 +189,7 @@
 <div id="portal-screen">
   <div class="topbar">
     <div class="topbar-left">
-      <img src="LOGO_BASE64_PLACEHOLDER" alt="MCPack" onerror="this.style.display='none'">
+      <img src="https://raw.githubusercontent.com/lucassouza-design/portal-bi/main/logo_mcpack_25-07.png">
       <div class="topbar-divider"></div>
       <span class="topbar-label">Portal BI</span>
       <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400;">Power BI · Atualização automática</span>
@@ -207,7 +220,7 @@
 <div id="admin-screen">
   <div class="admin-topbar">
     <div class="admin-topbar-left">
-      <img src="LOGO_BASE64_PLACEHOLDER" alt="MCPack" onerror="this.style.display='none'">
+      <img src="https://raw.githubusercontent.com/lucassouza-design/portal-bi/main/logo_mcpack_25-07.png">
       <div class="topbar-divider"></div>
       <span class="admin-title">⚙️ Painel Administrativo</span>
     </div>
@@ -219,7 +232,7 @@
     <div class="admin-card">
       <h3>👥 Usuários cadastrados <button class="btn-add" onclick="abrirModalAdd()" style="float:right">+ Novo usuário</button></h3>
       <table class="admin-table">
-        <thead><tr><th>Usuário</th><th>Páginas liberadas</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Usuário</th><th>Status</th><th>Páginas liberadas</th><th>Ações</th></tr></thead>
         <tbody id="users-tbody"></tbody>
       </table>
     </div>
@@ -247,9 +260,9 @@
 // ── Estado global ──
 let currentUser = null;
 let currentToken = null;
-let currentPages = [];  // [{id, label, base, pageName}] vindos da Edge Function
+let currentPages = [];
 let editingUser = null;
-let allPages = [];      // lista completa de páginas (admin_paginas)
+let allPages = [];
 let inactivityTimer;
 
 // ── Tema ──
@@ -299,7 +312,6 @@ async function doLogin() {
       return;
     }
 
-    // Sucesso
     currentToken = data.token;
     currentUser = data.username;
     currentPages = data.paginas || [];
@@ -357,9 +369,8 @@ function iniciarPortal(paginaInicial) {
   document.getElementById("portal-screen").style.display = "flex";
   document.getElementById("display-user").textContent = currentUser;
 
-  // Botão Admin só para is_admin
   const adminBtns = document.getElementById("admin-mode-btns");
-  if (adminBtns) adminBtns.style.display = (currentPages.some(p => p) && isAdmin()) ? "flex" : "none";
+  if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
 
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
@@ -367,21 +378,20 @@ function iniciarPortal(paginaInicial) {
     const btn = document.createElement("button");
     btn.className = "nav-tab";
     btn.textContent = pg.label;
-    btn.dataset.id = pg.key;
-    btn.onclick = () => abrirPagina(pg.key);
+    btn.dataset.id = pg.id;
+    btn.onclick = () => abrirPagina(pg.id);
     nav.appendChild(btn);
   });
 
-  const target = paginaInicial && currentPages.find(p => p.key === paginaInicial)
+  const target = paginaInicial && currentPages.find(p => p.id === paginaInicial)
     ? paginaInicial
-    : (currentPages[0] ? currentPages[0].key : null);
+    : (currentPages[0] ? currentPages[0].id : null);
 
   if (target) abrirPagina(target);
   resetTimer();
 }
 
 function isAdmin() {
-  // Verifica pelo token JWT (campo is_admin no payload)
   if (!currentToken) return false;
   try {
     const payload = JSON.parse(atob(currentToken.split('.')[1]));
@@ -389,14 +399,8 @@ function isAdmin() {
   } catch { return false; }
 }
 
-// Reexibe botões de admin após verificar token
-function setupAdminButtons() {
-  const adminBtns = document.getElementById("admin-mode-btns");
-  if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
-}
-
 function abrirPagina(id) {
-  const pg = currentPages.find(p => p.key === id);
+  const pg = currentPages.find(p => p.id === id);
   if (!pg) return;
   localStorage.setItem("mcpack_page", id);
   trackPage(pg.label, currentUser);
@@ -460,7 +464,7 @@ function adminLogout() { irParaDashboards(); }
 
 async function renderAdminTable() {
   const tbody = document.getElementById("users-tbody");
-  tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;color:var(--muted);padding:20px'>Carregando...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;color:var(--muted);padding:20px'>Carregando...</td></tr>";
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -468,14 +472,32 @@ async function renderAdminTable() {
       body: JSON.stringify({ action: "admin_list" })
     });
     const data = await resp.json();
-    if (!resp.ok || data.error) { tbody.innerHTML = "<tr><td colspan='3'>Erro: " + (data.error||"") + "</td></tr>"; return; }
+    if (!resp.ok || data.error) {
+      tbody.innerHTML = "<tr><td colspan='4'>Erro: " + (data.error||"") + "</td></tr>";
+      return;
+    }
     const users = data.users || [];
     tbody.innerHTML = "";
     users.forEach(u => {
+      const isSelf = u.username === currentUser;
       const pagesHtml = (u.paginas || []).map(p => `<span class="badge-page">${p.label}</span>`).join("");
+      const disabledAttr = isSelf ? "disabled title='Não é possível alterar seu próprio status'" : "";
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><strong>${u.username}</strong>${u.is_admin ? ' <span style="background:#1a4fa0;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700">ADMIN</span>' : ''}</td>
+        <td>
+          <strong>${u.username}</strong>
+          ${u.is_admin ? ' <span style="background:#1a4fa0;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700">ADMIN</span>' : ''}
+        </td>
+        <td>
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" ${u.ativo ? "checked" : ""} ${disabledAttr}
+                onchange="toggleAtivo('${u.username}', this)">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label ${u.ativo ? 'ativo' : 'inativo'}">${u.ativo ? "Ativo" : "Inativo"}</span>
+          </div>
+        </td>
         <td><div class="badge-pages">${pagesHtml}</div></td>
         <td>
           <button class="btn-edit" onclick="abrirModalEdit('${u.id}','${u.username}')">Editar</button>
@@ -484,7 +506,40 @@ async function renderAdminTable() {
       tbody.appendChild(tr);
     });
   } catch(e) {
-    tbody.innerHTML = "<tr><td colspan='3'>Erro de conexão.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='4'>Erro de conexão.</td></tr>";
+  }
+}
+
+async function toggleAtivo(username, checkbox) {
+  const novoEstado = checkbox.checked;
+  checkbox.disabled = true;
+
+  // Atualiza label otimisticamente
+  const label = checkbox.closest(".toggle-wrap").querySelector(".toggle-label");
+  label.textContent = novoEstado ? "Ativo" : "Inativo";
+  label.className = "toggle-label " + (novoEstado ? "ativo" : "inativo");
+
+  try {
+    const resp = await fetch(EDGE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentToken },
+      body: JSON.stringify({ action: "admin_toggle", targetUsername: username })
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      alert("Erro: " + (data.error || ""));
+      // Reverte UI
+      checkbox.checked = !novoEstado;
+      label.textContent = !novoEstado ? "Ativo" : "Inativo";
+      label.className = "toggle-label " + (!novoEstado ? "ativo" : "inativo");
+    }
+  } catch(e) {
+    alert("Erro de conexão.");
+    checkbox.checked = !novoEstado;
+    label.textContent = !novoEstado ? "Ativo" : "Inativo";
+    label.className = "toggle-label " + (!novoEstado ? "ativo" : "inativo");
+  } finally {
+    checkbox.disabled = false;
   }
 }
 
@@ -505,7 +560,6 @@ async function abrirModalEdit(id, username) {
   document.getElementById("modal-usuario").disabled = true;
   document.getElementById("modal-senha").value = "";
 
-  // Busca páginas do usuário
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -535,8 +589,8 @@ async function renderCheckboxes(selectedIds) {
     allPages = data.paginas || [];
     div.innerHTML = "";
     allPages.forEach(pg => {
-      const checked = selectedIds.includes(pg.key) ? "checked" : "";
-      div.innerHTML += `<label><input type="checkbox" value="${pg.key}" ${checked}/><span>${pg.label}</span></label>`;
+      const checked = selectedIds.includes(pg.id) ? "checked" : "";
+      div.innerHTML += `<label><input type="checkbox" value="${pg.id}" ${checked}/><span>${pg.label}</span></label>`;
     });
   } catch {
     div.innerHTML = "<span style='color:var(--danger);font-size:12px'>Erro ao carregar páginas.</span>";
