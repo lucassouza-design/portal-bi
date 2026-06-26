@@ -378,14 +378,14 @@ function iniciarPortal(paginaInicial) {
     const btn = document.createElement("button");
     btn.className = "nav-tab";
     btn.textContent = pg.label;
-    btn.dataset.id = pg.id;
-    btn.onclick = () => abrirPagina(pg.id);
+    btn.dataset.id = pg.key;
+    btn.onclick = () => abrirPagina(pg.key);
     nav.appendChild(btn);
   });
 
-  const target = paginaInicial && currentPages.find(p => p.id === paginaInicial)
+  const target = paginaInicial && currentPages.find(p => p.key === paginaInicial)
     ? paginaInicial
-    : (currentPages[0] ? currentPages[0].id : null);
+    : (currentPages[0] ? currentPages[0].key : null);
 
   if (target) abrirPagina(target);
   resetTimer();
@@ -399,12 +399,12 @@ function isAdmin() {
   } catch { return false; }
 }
 
-function abrirPagina(id) {
-  const pg = currentPages.find(p => p.id === id);
+function abrirPagina(key) {
+  const pg = currentPages.find(p => p.key === key);
   if (!pg) return;
-  localStorage.setItem("mcpack_page", id);
+  localStorage.setItem("mcpack_page", key);
   trackPage(pg.label, currentUser);
-  document.querySelectorAll(".nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+  document.querySelectorAll(".nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === key));
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
   loader.style.opacity = "1"; loader.style.display = "flex";
