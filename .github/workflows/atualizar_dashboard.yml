@@ -1,0 +1,40 @@
+name: Atualizar Dashboard MCPack
+on:
+  workflow_dispatch:   # disparado via cron-job.org
+permissions:
+  contents: write       # necessário pro push do html atualizado
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependências
+        run: pip install requests openpyxl
+      - name: Baixar Excel do SharePoint, atualizar dashboard e enviar e-mail
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          EMAIL_REMETENTE: ${{ secrets.EMAIL_REMETENTE }}
+          EMAIL_SENHA: ${{ secrets.EMAIL_SENHA }}
+          EMAIL_DESTINATARIOS: ${{ secrets.EMAIL_DESTINATARIOS }}
+          SP_SITE_HOST: ${{ secrets.SP_SITE_HOST }}
+          SP_SITE_PATH: ${{ secrets.SP_SITE_PATH }}
+          SP_FILE_PATH: ${{ secrets.SP_FILE_PATH }}
+        run: python github_sharepoint_atualizar_dashboard.py
+      - name: Commit e push do dashboard atualizado
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add dashboard-atendimentos/atendimentos.html
+          if git diff --cached --quiet; then
+            echo "Sem alterações no dashboard."
+          else
+            git commit -m "Atualiza atendimentos.html [automático]"
+            git push
+          fi
