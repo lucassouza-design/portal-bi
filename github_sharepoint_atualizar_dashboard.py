@@ -298,20 +298,32 @@ def enviar_email(sucesso: bool, total_registros: int = 0, erro: str = "") -> Non
     agora = datetime.now(tz=timezone(timedelta(hours=-3))).strftime("%d/%m/%Y %H:%M")
 
     if sucesso:
-        assunto = f"✅ Dashboard MCPack atualizado — {agora}"
+        assunto = f"✅ Gerenciador Ativos atualizado — {agora}"
         corpo = f"""
-<p>{saudacao()},</p>
-<p>O dashboard_mcpack.html foi atualizado automaticamente em <b>{agora}</b>.</p>
+<p>{saudacao()} time,</p>
+<p>O Gerenciador Ativos no portal BI foi atualizado em <b>{agora}</b>. Pode conferir.</p>
 <p>Total de registros: <b>{total_registros}</b></p>
-<p>Atenciosamente,<br>Py Automation</p>
+<p>Atenciosamente,<br>
+Lucas Souza<br>
+Analista de Dados — MCPack</p>
+<p style="color:#888; font-size:12px; margin-top:16px;">
+Este email foi enviado automaticamente por um sistema interno para uma lista de destinatários,
+usando esta caixa de entrada apenas como remetente técnico. Não é necessário responder.
+</p>
 """
     else:
-        assunto = f"❌ Falha ao atualizar Dashboard MCPack — {agora}"
+        assunto = f"❌ Falha ao atualizar Gerenciador Ativos — {agora}"
         corpo = f"""
-<p>{saudacao()},</p>
-<p>Ocorreu um erro ao atualizar o dashboard em <b>{agora}</b>.</p>
+<p>{saudacao()} time,</p>
+<p>Ocorreu um erro ao atualizar o Gerenciador Ativos no portal BI em <b>{agora}</b>.</p>
 <p><b>Erro:</b> {erro}</p>
-<p>Atenciosamente,<br>Py Automation</p>
+<p>Atenciosamente,<br>
+Lucas Souza<br>
+Analista de Dados — MCPack</p>
+<p style="color:#888; font-size:12px; margin-top:16px;">
+Este email foi enviado automaticamente por um sistema interno para uma lista de destinatários,
+usando esta caixa de entrada apenas como remetente técnico. Não é necessário responder.
+</p>
 """
 
     msg = MIMEMultipart("mixed")
