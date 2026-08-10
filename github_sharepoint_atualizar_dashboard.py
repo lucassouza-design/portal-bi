@@ -301,7 +301,7 @@ def enviar_email(sucesso: bool, total_registros: int = 0, erro: str = "") -> Non
         assunto = f"✅ Gerenciador Ativos atualizado — {agora}"
         corpo = f"""
 <p>{saudacao()} time,</p>
-<p>O Gerenciador Ativos no portal BI foi atualizado em <b>{agora}</b>. Pode conferir.</p>
+<p>O Gerenciador Ativos no portal BI foi atualizado em <b>{agora}</b>. Em alguns instantes os dados atualizados já estarão disponíveis.</p>
 <p>Total de registros: <b>{total_registros}</b></p>
 <p>Atenciosamente,<br>
 Lucas Souza<br>
