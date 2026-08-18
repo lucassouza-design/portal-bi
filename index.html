@@ -408,7 +408,7 @@ function abrirPagina(key) {
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
   loader.style.opacity = "1"; loader.style.display = "flex";
-  iframe.src = pg.tipo === "html" ? pg.base : pg.base + "&pageName=" + pg.pageName;
+  iframe.src = pg.tipo === "html" ? pg.base + "?u=" + encodeURIComponent(currentUser) : pg.base + "&pageName=" + pg.pageName;
   iframe.onload = () => {
     setTimeout(() => {
       loader.style.opacity = "0";
