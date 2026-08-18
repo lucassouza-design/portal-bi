@@ -138,7 +138,7 @@ tfoot td.r{text-align:right}
 </div>
 
 <div class="params" id="panel-intl-params" style="display:none;grid-template-columns:1fr;margin-top:10px">
-  <div class="pc"><div class="pc-lbl">Fator internacional (x)</div><div class="pc-val" id="dv-intl">1.85x</div><input type="range" id="sl-intl" min="1" max="4" step="0.05" value="1.85"><div class="pc-sub">Preço de venda = Custo original × fator (mesma moeda do item)</div></div>
+  <div class="pc"><div class="pc-lbl">Margem de venda internacional (%)</div><div class="pc-val" id="dv-intl">46%</div><input type="range" id="sl-intl" min="20" max="70" step="1" value="46"><div class="pc-sub">Preço de venda = Custo original ÷ (1 − margem), mesma moeda do item</div></div>
 </div>
 
 <div class="toggle">
@@ -242,13 +242,13 @@ function updatePreview(){
   if(isNaN(val)||val<=0){ box.innerHTML='Preço de venda estimado: <b style="color:var(--green)">—</b>'; return; }
   const fat=parseFloat(document.getElementById('sl-fat').value)/100;
   const mg=parseFloat(document.getElementById('sl-mg').value)/100;
-  const fIntl=parseFloat(document.getElementById('sl-intl').value);
+  const mgIntl=parseFloat(document.getElementById('sl-intl').value)/100;
   const c=gc(moe);
   const bU=moe==='BRL'?val:val*c;
-  let pU;
-  if(tab==='NAC'){ const iU=moe==='BRL'?val:bU*(1+fat); pU=iU/(1-mg); }
-  else { pU=bU*fIntl; }
-  box.innerHTML=`Preço de venda estimado (${moe}): <b style="color:var(--green)">${brl(pU)}</b>`;
+  let pU,txt;
+  if(tab==='NAC'){ const iU=moe==='BRL'?val:bU*(1+fat); pU=iU/(1-mg); txt=brl(pU); }
+  else { pU=val/(1-mgIntl); txt=fmt(pU,moe); }
+  box.innerHTML=`Preço de venda estimado (${moe}): <b style="color:var(--green)">${txt}</b>`;
 }
 
 function add(cod,dsc,val,qty,m){
@@ -268,10 +268,10 @@ function ren(){
   const fat=parseFloat(document.getElementById('sl-fat').value)/100;
   const mg=parseFloat(document.getElementById('sl-mg').value)/100;
   const div=1-mg;
-  const fIntl=parseFloat(document.getElementById('sl-intl').value);
+  const mgIntl=parseFloat(document.getElementById('sl-intl').value)/100;
   document.getElementById('dv-fat').textContent=Math.round(fat*100)+'%';
   document.getElementById('dv-mg').textContent=Math.round(mg*100)+'%';
-  document.getElementById('dv-intl').textContent=fIntl.toFixed(2)+'x';
+  document.getElementById('dv-intl').textContent=Math.round(mgIntl*100)+'%';
   ['usd','eur','chf'].forEach(x=>{const v=parseFloat(document.getElementById('sl-'+x).value);document.getElementById('dv-'+x).textContent='R$\u00a0'+v.toFixed(2).replace('.',',');});
   const tb=document.getElementById('tb'),tf=document.getElementById('tf');
   if(!its.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum item adicionado.<br>Use o formulário acima.</td></tr>';tf.style.display='none';['tt-b','tt-i','tt-v'].forEach(id=>document.getElementById(id).textContent='—');return;}
@@ -281,7 +281,7 @@ function ren(){
     const c=gc(m),bU=m==='BRL'?val:val*c;
     let iU,pU,costBase;
     if(tab==='NAC'){ iU=m==='BRL'?val:bU*(1+fat); pU=iU/div; costBase=iU; }
-    else { iU=null; pU=val*fIntl; costBase=val; }
+    else { iU=null; pU=val/(1-mgIntl); costBase=val; }
     const margPct=pU>0?((pU-costBase)/pU)*100:0;
     tB+=bU*qty; tI+=(iU!==null?iU:0)*qty; tV+=pU*qty; tCostBase+=costBase*qty; tOrig+=val*qty;
     const iCol=(tab==='NAC')?(m==='BRL'?'<td class="r" style="color:var(--muted);font-size:10px">—</td>':`<td class="r">${brl(iU*qty)}</td>`):'<td class="r" style="color:var(--muted);font-size:10px">—</td>';
@@ -320,13 +320,13 @@ function ren(){
 
 function cpy(){
   const fat=parseFloat(document.getElementById('sl-fat').value)/100,mg=parseFloat(document.getElementById('sl-mg').value)/100,div=1-mg;
-  const fIntl=parseFloat(document.getElementById('sl-intl').value);
+  const mgIntl=parseFloat(document.getElementById('sl-intl').value)/100;
   let t='Código\tDescrição\tMoeda\tQtd\tCusto\tBRL\tC/imp\tPV\n';
   its.forEach(({cod,dsc,val,qty,m})=>{
     const c=gc(m),b=m==='BRL'?val*qty:val*c*qty;
     let i,pv;
     if(tab==='NAC'){ i=m==='BRL'?b:b*(1+fat); pv=(i/div)/qty; }
-    else { i=null; pv=val*fIntl; }
+    else { i=null; pv=val/(1-mgIntl); }
     t+=`${cod}\t${dsc}\t${m}\t${qty}\t${val.toFixed(2)}\t${b.toFixed(2)}\t${i!==null?i.toFixed(2):'-'}\t${pv.toFixed(2)}\n`;
   });
   navigator.clipboard.writeText(t).catch(()=>{});
