@@ -138,7 +138,7 @@ tfoot td.r{text-align:right}
 </div>
 
 <div class="params" id="panel-intl-params" style="display:none;grid-template-columns:1fr;margin-top:10px">
-  <div class="pc"><div class="pc-lbl">Fator internacional (x)</div><div class="pc-val" id="dv-intl">1.85x</div><input type="range" id="sl-intl" min="1" max="4" step="0.05" value="1.85"><div class="pc-sub">Preço de venda = Custo BRL × fator</div></div>
+  <div class="pc"><div class="pc-lbl">Fator internacional (x)</div><div class="pc-val" id="dv-intl">1.85x</div><input type="range" id="sl-intl" min="1" max="4" step="0.05" value="1.85"><div class="pc-sub">Preço de venda = Custo original × fator (mesma moeda do item)</div></div>
 </div>
 
 <div class="toggle">
@@ -165,14 +165,14 @@ tfoot td.r{text-align:right}
 </div>
 
 <div class="tots">
-  <div class="tc2"><div class="tc2-lbl">Custo total BRL</div><div class="tc2-val" id="tt-b">—</div></div>
+  <div class="tc2"><div class="tc2-lbl" id="lbl-tt-b">Custo total BRL</div><div class="tc2-val" id="tt-b">—</div></div>
   <div class="tc2"><div class="tc2-lbl" id="lbl-tt-i">C/ importação</div><div class="tc2-val" id="tt-i">—</div></div>
   <div class="tc2"><div class="tc2-lbl">Total de venda</div><div class="tc2-val g" id="tt-v">—</div></div>
 </div>
 
 <div class="tbl-w"><table>
   <colgroup><col style="width:3%"><col style="width:12%"><col style="width:19%"><col style="width:5%"><col style="width:6%"><col style="width:10%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:12%"></colgroup>
-  <thead><tr><th></th><th>Código</th><th>Descrição</th><th class="r">Qtd</th><th>Moeda</th><th class="r">Custo orig.</th><th class="r">Custo BRL</th><th class="r" id="th-imp">C/ imp.</th><th class="r">Preço venda</th><th class="r">Margem</th></tr></thead>
+  <thead><tr><th></th><th>Código</th><th>Descrição</th><th class="r">Qtd</th><th>Moeda</th><th class="r">Custo orig.</th><th class="r" id="th-brl">Custo BRL</th><th class="r" id="th-imp">C/ imp.</th><th class="r">Preço venda</th><th class="r">Margem</th></tr></thead>
   <tbody id="tb"></tbody>
   <tfoot id="tf" style="display:none"><tr><td colspan="5">Total</td><td class="r" id="f-b">—</td><td class="r" id="f-bi">—</td><td class="r" id="f-i">—</td><td class="r" style="color:var(--green)" id="f-v">—</td><td class="r" id="f-mg">—</td></tr></tfoot>
 </table></div>
@@ -217,6 +217,8 @@ function switchTab(t){
   document.getElementById('ttl').textContent='Calculadora de Preço de Venda '+(t==='NAC'?'Nacional':'Internacional')+' — MC Pack';
   document.getElementById('th-imp').textContent=t==='NAC'?'C/ imp.':'—';
   document.getElementById('lbl-tt-i').textContent=t==='NAC'?'C/ importação':'—';
+  document.getElementById('th-brl').textContent=t==='NAC'?'Custo BRL':'—';
+  document.getElementById('lbl-tt-b').textContent=t==='NAC'?'Custo total BRL':'—';
   ren();
 }
 
@@ -273,32 +275,47 @@ function ren(){
   ['usd','eur','chf'].forEach(x=>{const v=parseFloat(document.getElementById('sl-'+x).value);document.getElementById('dv-'+x).textContent='R$\u00a0'+v.toFixed(2).replace('.',',');});
   const tb=document.getElementById('tb'),tf=document.getElementById('tf');
   if(!its.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum item adicionado.<br>Use o formulário acima.</td></tr>';tf.style.display='none';['tt-b','tt-i','tt-v'].forEach(id=>document.getElementById(id).textContent='—');return;}
-  tb.innerHTML=''; let tB=0,tI=0,tV=0,tCostBase=0;
+  tb.innerHTML=''; let tB=0,tI=0,tV=0,tCostBase=0,tOrig=0;
+  const uniformM=its.every(it=>it.m===its[0].m)?its[0].m:null;
   its.forEach(({id,cod,dsc,val,qty,m})=>{
     const c=gc(m),bU=m==='BRL'?val:val*c;
     let iU,pU,costBase;
     if(tab==='NAC'){ iU=m==='BRL'?val:bU*(1+fat); pU=iU/div; costBase=iU; }
-    else { iU=null; pU=bU*fIntl; costBase=bU; }
+    else { iU=null; pU=val*fIntl; costBase=val; }
     const margPct=pU>0?((pU-costBase)/pU)*100:0;
-    tB+=bU*qty; tI+=(iU!==null?iU:0)*qty; tV+=pU*qty; tCostBase+=costBase*qty;
+    tB+=bU*qty; tI+=(iU!==null?iU:0)*qty; tV+=pU*qty; tCostBase+=costBase*qty; tOrig+=val*qty;
     const iCol=(tab==='NAC')?(m==='BRL'?'<td class="r" style="color:var(--muted);font-size:10px">—</td>':`<td class="r">${brl(iU*qty)}</td>`):'<td class="r" style="color:var(--muted);font-size:10px">—</td>';
+    const brlCol=(tab==='NAC')?`<td class="r">${brl(bU*qty)}</td>`:'<td class="r" style="color:var(--muted);font-size:10px">—</td>';
+    const vendaTxt=(tab==='NAC')?brl(pU):fmt(pU,m);
     const mgColor=margPct>=45?'#1DB954':'#e05c5c';
     const mgCol=`<td class="r" style="color:${mgColor}">${trunc2(margPct).toFixed(2).replace('.',',')}%</td>`;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><button class="del" onclick="del(${id})">×</button></td><td class="cod">${cod}</td><td class="dsc" title="${dsc}">${dsc}</td><td class="r" style="color:var(--muted)">${qty}</td><td>${moeSelect(id,m)}</td><td class="r" style="color:var(--muted)">${fmt(val,m)}</td><td class="r">${brl(bU*qty)}</td>${iCol}<td class="r" style="color:var(--green);font-weight:600">${brl(pU)}<span style="font-size:10px;color:var(--muted);font-weight:400"> /un</span></td>${mgCol}`;
+    tr.innerHTML=`<td><button class="del" onclick="del(${id})">×</button></td><td class="cod">${cod}</td><td class="dsc" title="${dsc}">${dsc}</td><td class="r" style="color:var(--muted)">${qty}</td><td>${moeSelect(id,m)}</td><td class="r" style="color:var(--muted)">${fmt(val,m)}</td>${brlCol}${iCol}<td class="r" style="color:var(--green);font-weight:600">${vendaTxt}<span style="font-size:10px;color:var(--muted);font-weight:400"> /un</span></td>${mgCol}`;
     tb.appendChild(tr);
   });
   tf.style.display='';
-  document.getElementById('f-b').textContent=brl(tB);
-  document.getElementById('f-bi').textContent=brl(tB);
-  document.getElementById('f-i').textContent=tab==='NAC'?brl(tI):'—';
   const totMg=tV>0?((tV-tCostBase)/tV)*100:0;
   document.getElementById('f-mg').textContent=tV>0?trunc2(totMg).toFixed(2).replace('.',',')+'%':'—';
   document.getElementById('f-mg').style.color=tV>0?(totMg>=45?'#1DB954':'#e05c5c'):'#fff';
-  document.getElementById('f-v').textContent=brl(tV);
-  document.getElementById('tt-b').textContent=brl(tB);
-  document.getElementById('tt-i').textContent=tab==='NAC'?brl(tI):'—';
-  document.getElementById('tt-v').textContent=brl(tV);
+  if(tab==='NAC'){
+    document.getElementById('f-b').textContent=brl(tB);
+    document.getElementById('f-bi').textContent=brl(tB);
+    document.getElementById('f-i').textContent=brl(tI);
+    document.getElementById('f-v').textContent=brl(tV);
+    document.getElementById('tt-b').textContent=brl(tB);
+    document.getElementById('tt-i').textContent=brl(tI);
+    document.getElementById('tt-v').textContent=brl(tV);
+  } else {
+    const origTxt=uniformM?fmt(tOrig,uniformM):tOrig.toFixed(2)+' (moedas variadas)';
+    const vendaTxt=uniformM?fmt(tV,uniformM):tV.toFixed(2)+' (moedas variadas)';
+    document.getElementById('f-b').textContent=origTxt;
+    document.getElementById('f-bi').textContent='—';
+    document.getElementById('f-i').textContent='—';
+    document.getElementById('f-v').textContent=vendaTxt;
+    document.getElementById('tt-b').textContent='—';
+    document.getElementById('tt-i').textContent='—';
+    document.getElementById('tt-v').textContent=vendaTxt;
+  }
 }
 
 function cpy(){
@@ -309,7 +326,7 @@ function cpy(){
     const c=gc(m),b=m==='BRL'?val*qty:val*c*qty;
     let i,pv;
     if(tab==='NAC'){ i=m==='BRL'?b:b*(1+fat); pv=(i/div)/qty; }
-    else { i=null; pv=(b/qty)*fIntl; }
+    else { i=null; pv=val*fIntl; }
     t+=`${cod}\t${dsc}\t${m}\t${qty}\t${val.toFixed(2)}\t${b.toFixed(2)}\t${i!==null?i.toFixed(2):'-'}\t${pv.toFixed(2)}\n`;
   });
   navigator.clipboard.writeText(t).catch(()=>{});
