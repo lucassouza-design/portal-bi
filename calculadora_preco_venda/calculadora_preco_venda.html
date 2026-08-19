@@ -26,7 +26,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-size:13.5px;transiti
 .brand .sub{font-size:11px;color:rgba(255,255,255,0.6);font-weight:400;margin-top:1px;}
 .brand .credits{font-size:10.5px;color:rgba(255,255,255,0.5);font-weight:400;margin-top:4px;line-height:1.5;}
 .brand .credits b{color:rgba(255,255,255,0.85);font-weight:600;}
-.badge-theme{font-size:10px;color:rgba(255,255,255,0.55);text-align:right;white-space:nowrap;align-self:flex-end;margin-top:22px;}
+.badge-theme{font-size:10px;color:rgba(255,255,255,0.55);text-align:right;white-space:nowrap;align-self:center;}
 .tabs{display:flex;background:var(--card);padding:8px 20px;gap:2px;border-bottom:1px solid var(--line);}
 .tab-btn{background:transparent;border:none;color:var(--muted);padding:7px 16px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border-radius:7px;transition:.18s;}
 .tab-btn:hover{color:var(--ink);background:rgba(26,79,160,0.08);}
@@ -102,8 +102,8 @@ tfoot td.r{text-align:right}
     <div>
       <h1 id="ttl">Calculadora de Preço de Venda Nacional — MC Pack</h1>
       <div class="credits">
-        <div><b>Juliana Silva</b> — Criadora</div>
-        <div><b>Lucas Souza</b> — Visual</div>
+        <div><b>Juliana Silva</b> — Criadora (Coordenadora de Pós Vendas)</div>
+        <div><b>Lucas Souza</b> — Visual (Analista de Dados)</div>
       </div>
     </div>
   </div>
@@ -116,12 +116,6 @@ tfoot td.r{text-align:right}
 </div>
 
 <div class="wrap">
-
-<div class="sec-title">Histórico de acessos</div>
-<div class="sec-body">
-  <div id="hist-list" style="font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto"></div>
-  <div style="font-size:10px;color:var(--muted);margin-top:6px">Atrelado ao usuário logado no portal BI.</div>
-</div>
 
 <div class="sec-title">Câmbio &amp; Parâmetros</div>
 <div class="sec-body">
@@ -413,57 +407,6 @@ function applyTheme(){
 }
 applyTheme();
 setInterval(applyTheme,60000);
-
-// ---- Histórico de acessos (Supabase, atrelado ao usuário do portal) ----
-const SB_URL='https://igsoruvlyvydocdfatde.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnc29ydXZseXZ5ZG9jZGZhdGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDg5NzksImV4cCI6MjA5NDE4NDk3OX0.j7EBV7Q-4aqbwd0JeOTYqtXzlGUs2jdnggTbuIk26BM';
-const HIST_KEY='calc_mcpack_access_history';
-
-function getUsername(){
-  const p=new URLSearchParams(window.location.search);
-  return p.get('u') || null;
-}
-
-async function logAccess(){
-  const user=getUsername();
-  const el=document.getElementById('hist-list');
-  if(!user){
-    // fora do portal (teste local): mantém fallback local, sem Supabase
-    let hist=[];
-    try{ hist=JSON.parse(localStorage.getItem(HIST_KEY))||[]; }catch(e){ hist=[]; }
-    hist.unshift(new Date().toISOString());
-    hist=hist.slice(0,20);
-    localStorage.setItem(HIST_KEY,JSON.stringify(hist));
-    el.innerHTML='<div style="color:var(--orange)">Aberto fora do portal — histórico local (sem usuário identificado).</div>'
-      + hist.map(iso=>{
-          const d=new Date(iso);
-          return `<div>${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
-        }).join('');
-    return;
-  }
-  try{
-    await fetch(`${SB_URL}/rest/v1/calc_preco_acessos`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
-      body:JSON.stringify({username:user})
-    });
-  }catch(e){ /* falha silenciosa de rede não deve travar a calculadora */ }
-  try{
-    const res=await fetch(`${SB_URL}/rest/v1/calc_preco_acessos?username=eq.${encodeURIComponent(user)}&select=acessado_em&order=acessado_em.desc&limit=20`,{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-    });
-    const rows=await res.json();
-    if(!rows.length){ el.innerHTML='<div>Nenhum acesso registrado ainda.</div>'; return; }
-    el.innerHTML=`<div style="color:var(--muted);margin-bottom:4px">Usuário: <b style="color:var(--ink)">${user}</b></div>`
-      + rows.map(r=>{
-          const d=new Date(r.acessado_em);
-          return `<div>${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
-        }).join('');
-  }catch(e){
-    el.innerHTML='<div style="color:var(--red)">Não foi possível carregar o histórico do Supabase.</div>';
-  }
-}
-logAccess();
 
 document.getElementById('imp-file').addEventListener('change',function(e){
   const file=e.target.files[0]; if(!file)return;
