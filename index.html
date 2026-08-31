@@ -31,7 +31,6 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; }
   body { font-family:'Poppins',sans-serif; background:var(--bg); color:var(--text); transition:background 0.5s,color 0.5s; }
-
   /* LOGIN */
   #login-screen { min-height:100vh; display:flex; }
   .login-left {
@@ -61,7 +60,6 @@
   .btn-login { width:100%; background:var(--btn-bg); color:var(--btn-text); border:none; border-radius:10px; padding:14px; font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:opacity 0.2s,transform 0.1s; margin-top:6px; letter-spacing:0.03em; }
   .btn-login:hover { opacity:0.88; }
   .btn-login:active { transform:scale(0.98); }
-
   /* PORTAL */
   #portal-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; }
   .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:54px; background:var(--topbar-bg); flex-shrink:0; position:relative; transition:background 0.5s; box-shadow:0 1px 0 rgba(255,255,255,0.05); }
@@ -86,7 +84,6 @@
   @keyframes spin { to{transform:rotate(360deg)} }
   .loader-text { font-size:13px; color:var(--muted); }
   #report-iframe { width:100%; height:100%; border:none; display:block; }
-
   /* ADMIN PANEL */
   #admin-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--bg); }
   .admin-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:54px; background:var(--topbar-bg); flex-shrink:0; }
@@ -111,7 +108,6 @@
   .btn-add:hover { opacity:0.88; }
   .btn-admin-logout { background:transparent; border:1px solid rgba(255,255,255,0.18); border-radius:7px; padding:5px 14px; color:rgba(255,255,255,0.6); font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s; }
   .btn-admin-logout:hover { border-color:var(--danger); color:var(--danger); }
-
   /* TOGGLE ATIVO/INATIVO */
   .toggle-wrap { display:flex; align-items:center; gap:8px; }
   .toggle { position:relative; display:inline-block; width:38px; height:22px; flex-shrink:0; }
@@ -124,7 +120,6 @@
   .toggle-label { font-size:12px; font-weight:500; }
   .toggle-label.ativo { color:#22c55e; }
   .toggle-label.inativo { color:var(--muted); }
-
   /* MODAL */
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center; }
   .modal-overlay.active { display:flex; }
@@ -152,26 +147,10 @@
 </script>
 </head>
 <body>
-
 <!-- ===== CONFIGURAÇÃO ===== -->
 <script>
   const EDGE_URL = "https://igsoruvlyvydocdfatde.supabase.co/functions/v1/portal-auth";
-  const SUPABASE_URL = "https://igsoruvlyvydocdfatde.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnc29ydXZseXZ5ZG9jZGZhdGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDg5NzksImV4cCI6MjA5NDE4NDk3OX0.j7EBV7Q-4aqbwd0JeOTYqtXzlGUs2jdnggTbuIk26BM";
-
-  function registrarAcesso(pagina) {
-    fetch(SUPABASE_URL + "/rest/v1/portal_acessos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ username: currentUser, pagina })
-    }).catch(() => {});
-  }
 </script>
-
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-left">
@@ -198,7 +177,6 @@
     </div>
   </div>
 </div>
-
 <!-- PORTAL -->
 <div id="portal-screen">
   <div class="topbar">
@@ -229,7 +207,6 @@
     </div>
   </div>
 </div>
-
 <!-- ADMIN -->
 <div id="admin-screen">
   <div class="admin-topbar">
@@ -252,7 +229,6 @@
     </div>
   </div>
 </div>
-
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
@@ -269,7 +245,6 @@
     </div>
   </div>
 </div>
-
 <script>
 // ── Estado global ──
 let currentUser = null;
@@ -278,7 +253,6 @@ let currentPages = [];
 let editingUser = null;
 let allPages = [];
 let inactivityTimer;
-
 // ── Tema ──
 function aplicarTema() {
   const h = new Date().getHours();
@@ -297,7 +271,6 @@ function aplicarTema() {
 }
 aplicarTema();
 setInterval(aplicarTema, 60000);
-
 // ── Login ──
 async function doLogin() {
   const u = document.getElementById("input-user").value.trim().toLowerCase();
@@ -305,13 +278,10 @@ async function doLogin() {
   const err = document.getElementById("error-msg");
   const btn = document.querySelector(".btn-login");
   const remember = document.getElementById("remember-me").checked;
-
   if (!u || !p) { err.style.display = "block"; err.textContent = "Preencha usuário e senha."; return; }
-
   btn.textContent = "Entrando...";
   btn.disabled = true;
   err.style.display = "none";
-
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -319,27 +289,20 @@ async function doLogin() {
       body: JSON.stringify({ action: "login", username: u, password: p })
     });
     const data = await resp.json();
-
     if (!resp.ok || data.error) {
       err.style.display = "block";
       err.textContent = data.error || "Usuário ou senha incorretos.";
       return;
     }
-
     currentToken = data.token;
     currentUser = data.username;
     currentPages = data.paginas || [];
-
     if (remember) localStorage.setItem("mcpack_remember_user", u);
     else localStorage.removeItem("mcpack_remember_user");
-
     localStorage.setItem("mcpack_token", currentToken);
     localStorage.setItem("mcpack_page", "");
-
     trackLogin(currentUser);
-    registrarAcesso("login");
     iniciarPortal(null);
-
   } catch (e) {
     err.style.display = "block";
     err.textContent = "Erro de conexão. Tente novamente.";
@@ -348,17 +311,13 @@ async function doLogin() {
     btn.disabled = false;
   }
 }
-
 document.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
-
 // ── Verificar sessão salva ──
 async function carregarSessao() {
   const token = localStorage.getItem("mcpack_token");
   const savedUser = localStorage.getItem("mcpack_remember_user");
   if (savedUser) document.getElementById("input-user").value = savedUser;
-
   if (!token) return;
-
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -367,7 +326,6 @@ async function carregarSessao() {
     });
     const data = await resp.json();
     if (!resp.ok || data.error) { localStorage.removeItem("mcpack_token"); return; }
-
     currentToken = token;
     currentUser = data.username;
     currentPages = data.paginas || [];
@@ -377,16 +335,13 @@ async function carregarSessao() {
     localStorage.removeItem("mcpack_token");
   }
 }
-
 // ── Portal ──
 function iniciarPortal(paginaInicial) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("portal-screen").style.display = "flex";
   document.getElementById("display-user").textContent = currentUser;
-
   const adminBtns = document.getElementById("admin-mode-btns");
   if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
-
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
   currentPages.forEach(pg => {
@@ -397,15 +352,12 @@ function iniciarPortal(paginaInicial) {
     btn.onclick = () => abrirPagina(pg.key);
     nav.appendChild(btn);
   });
-
   const target = paginaInicial && currentPages.find(p => p.key === paginaInicial)
     ? paginaInicial
     : (currentPages[0] ? currentPages[0].key : null);
-
   if (target) abrirPagina(target);
   resetTimer();
 }
-
 function isAdmin() {
   if (!currentToken) return false;
   try {
@@ -413,13 +365,11 @@ function isAdmin() {
     return payload.is_admin === true;
   } catch { return false; }
 }
-
 function abrirPagina(key) {
   const pg = currentPages.find(p => p.key === key);
   if (!pg) return;
   localStorage.setItem("mcpack_page", key);
   trackPage(pg.label, currentUser);
-  registrarAcesso(pg.label);
   document.querySelectorAll(".nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === key));
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
@@ -432,7 +382,6 @@ function abrirPagina(key) {
     }, 1500);
   };
 }
-
 function doLogout() {
   localStorage.removeItem("mcpack_token");
   localStorage.removeItem("mcpack_page");
@@ -446,7 +395,6 @@ function doLogout() {
   document.getElementById("input-pass").value = "";
   if (savedUser) setTimeout(() => document.getElementById("input-pass").focus(), 100);
 }
-
 // ── Inatividade 30 min ──
 function resetTimer() {
   clearTimeout(inactivityTimer);
@@ -455,7 +403,6 @@ function resetTimer() {
 ["mousemove","mousedown","keydown","touchstart","scroll","click"].forEach(evt =>
   document.addEventListener(evt, resetTimer, true)
 );
-
 // ── Admin ──
 function irParaDashboards() {
   document.getElementById("admin-screen").style.display = "none";
@@ -465,7 +412,6 @@ function irParaDashboards() {
   document.getElementById("btn-admin-portal").style.background = "rgba(255,255,255,0.08)";
   document.getElementById("btn-admin-portal").style.color = "rgba(255,255,255,0.8)";
 }
-
 async function irParaAdmin() {
   document.getElementById("portal-screen").style.display = "none";
   document.getElementById("admin-screen").style.display = "flex";
@@ -475,9 +421,7 @@ async function irParaAdmin() {
   document.getElementById("btn-dashboards").style.color = "rgba(255,255,255,0.8)";
   await renderAdminTable();
 }
-
 function adminLogout() { irParaDashboards(); }
-
 async function renderAdminTable() {
   const tbody = document.getElementById("users-tbody");
   tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;color:var(--muted);padding:20px'>Carregando...</td></tr>";
@@ -525,16 +469,13 @@ async function renderAdminTable() {
     tbody.innerHTML = "<tr><td colspan='4'>Erro de conexão.</td></tr>";
   }
 }
-
 async function toggleAtivo(username, checkbox) {
   const novoEstado = checkbox.checked;
   checkbox.disabled = true;
-
   // Atualiza label otimisticamente
   const label = checkbox.closest(".toggle-wrap").querySelector(".toggle-label");
   label.textContent = novoEstado ? "Ativo" : "Inativo";
   label.className = "toggle-label " + (novoEstado ? "ativo" : "inativo");
-
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -558,7 +499,6 @@ async function toggleAtivo(username, checkbox) {
     checkbox.disabled = false;
   }
 }
-
 async function abrirModalAdd() {
   editingUser = null;
   document.getElementById("modal-title").textContent = "Novo usuário";
@@ -568,14 +508,12 @@ async function abrirModalAdd() {
   await renderCheckboxes([]);
   document.getElementById("modal-overlay").classList.add("active");
 }
-
 async function abrirModalEdit(id, username) {
   editingUser = { id, username };
   document.getElementById("modal-title").textContent = "Editar: " + username;
   document.getElementById("modal-usuario").value = username;
   document.getElementById("modal-usuario").disabled = true;
   document.getElementById("modal-senha").value = "";
-
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -587,14 +525,11 @@ async function abrirModalEdit(id, username) {
     const selectedIds = user ? (user.paginas || []).map(p => p.id) : [];
     await renderCheckboxes(selectedIds);
   } catch { await renderCheckboxes([]); }
-
   document.getElementById("modal-overlay").classList.add("active");
 }
-
 async function renderCheckboxes(selectedIds) {
   const div = document.getElementById("pages-checkboxes");
   div.innerHTML = "<span style='color:var(--muted);font-size:12px'>Carregando páginas...</span>";
-
   try {
     const resp = await fetch(EDGE_URL, {
       method: "POST",
@@ -612,19 +547,15 @@ async function renderCheckboxes(selectedIds) {
     div.innerHTML = "<span style='color:var(--danger);font-size:12px'>Erro ao carregar páginas.</span>";
   }
 }
-
 function fecharModal() { document.getElementById("modal-overlay").classList.remove("active"); }
-
 async function salvarUsuario() {
   const u = document.getElementById("modal-usuario").value.trim().toLowerCase();
   const s = document.getElementById("modal-senha").value.trim();
   const checks = [...document.querySelectorAll("#pages-checkboxes input:checked")].map(c => c.value);
   if (!u) { alert("Preencha o usuário!"); return; }
   if (!editingUser && !s) { alert("Preencha a senha para novo usuário!"); return; }
-
   const btn = document.querySelector(".btn-save");
   btn.textContent = "Salvando..."; btn.disabled = true;
-
   try {
     const body = {
       action: "admin_save",
@@ -633,7 +564,6 @@ async function salvarUsuario() {
     };
     if (s) body.newPassword = s;
     if (!editingUser) body.newUsername = u;
-
     const resp = await fetch(EDGE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentToken },
@@ -649,7 +579,6 @@ async function salvarUsuario() {
     btn.textContent = "Salvar"; btn.disabled = false;
   }
 }
-
 async function deletarUsuario(id, username) {
   if (!confirm(`Remover o usuário "${username}"?`)) return;
   try {
@@ -665,7 +594,6 @@ async function deletarUsuario(id, username) {
     alert("Erro de conexão.");
   }
 }
-
 // ── Google Analytics ──
 function trackLogin(username) {
   if (typeof gtag !== 'undefined') {
@@ -678,7 +606,6 @@ function trackPage(pageName, username) {
     gtag('event', 'page_view', { page_title: pageName, user_login: username || 'unknown' });
   }
 }
-
 // ── Init ──
 carregarSessao();
 </script>
