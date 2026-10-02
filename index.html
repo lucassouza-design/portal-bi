@@ -252,7 +252,6 @@ let currentToken = null;
 let currentPages = [];
 let editingUser = null;
 let allPages = [];
-let inactivityTimer;
 // ── Tema ──
 function aplicarTema() {
   const h = new Date().getHours();
@@ -356,7 +355,6 @@ function iniciarPortal(paginaInicial) {
     ? paginaInicial
     : (currentPages[0] ? currentPages[0].key : null);
   if (target) abrirPagina(target);
-  resetTimer();
 }
 function isAdmin() {
   if (!currentToken) return false;
@@ -395,14 +393,6 @@ function doLogout() {
   document.getElementById("input-pass").value = "";
   if (savedUser) setTimeout(() => document.getElementById("input-pass").focus(), 100);
 }
-// ── Inatividade 30 min ──
-function resetTimer() {
-  clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(() => { if (currentUser) doLogout(); }, 30 * 60 * 1000);
-}
-["mousemove","mousedown","keydown","touchstart","scroll","click"].forEach(evt =>
-  document.addEventListener(evt, resetTimer, true)
-);
 // ── Admin ──
 function irParaDashboards() {
   document.getElementById("admin-screen").style.display = "none";
