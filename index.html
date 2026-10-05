@@ -596,6 +596,18 @@ function trackPage(pageName, username) {
     gtag('event', 'page_view', { page_title: pageName, user_login: username || 'unknown' });
   }
 }
+// ── Auto refresh do dashboard (30 min) ──
+setInterval(() => {
+  if (!currentToken) return;
+  if (document.getElementById("portal-screen").style.display !== "flex") return;
+  const iframe = document.getElementById("report-iframe");
+  const src = iframe.getAttribute("src");
+  if (!src) return;
+  const loader = document.getElementById("iframe-loader");
+  loader.style.display = "flex";
+  loader.style.opacity = "1";
+  iframe.src = src;
+}, 30 * 60 * 1000);
 // ── Init ──
 carregarSessao();
 </script>
