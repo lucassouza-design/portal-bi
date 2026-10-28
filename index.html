@@ -608,6 +608,15 @@ setInterval(() => {
   loader.style.opacity = "1";
   iframe.src = src;
 }, 30 * 60 * 1000);
+// ── Agente Marketing (iframe tipo html): entrega o token por postMessage ──
+// Só responde ao iframe do portal e só para as origens listadas (o token nunca vai na URL).
+const AGENT_ORIGINS = ["https://srv2004542.hstgr.cloud"]; // + "https://agente.mcpack.com.br" quando o DNS existir
+window.addEventListener("message", (e) => {
+  const iframe = document.getElementById("report-iframe");
+  if (!iframe || e.source !== iframe.contentWindow) return;
+  if (!e.data || e.data.type !== "agent-ready" || !AGENT_ORIGINS.includes(e.origin)) return;
+  if (currentToken) e.source.postMessage({ type: "mcpack-token", token: currentToken }, e.origin);
+});
 // ── Init ──
 carregarSessao();
 </script>
