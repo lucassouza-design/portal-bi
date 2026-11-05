@@ -343,7 +343,8 @@ function iniciarPortal(paginaInicial) {
   if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
-  currentPages.forEach(pg => {
+  // Abas em ordem alfabética (só na exibição; a página inicial padrão continua sendo a primeira da lista original)
+  [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" })).forEach(pg => {
     const btn = document.createElement("button");
     btn.className = "nav-tab";
     btn.textContent = pg.label;
@@ -372,6 +373,10 @@ function abrirPagina(key) {
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
   loader.style.opacity = "1"; loader.style.display = "flex";
+  // Microfone (ditado por voz) só para o chat do agente; os demais iframes não recebem a permissão
+  let isAgent = false;
+  try { isAgent = pg.tipo === "html" && AGENT_ORIGINS.includes(new URL(pg.base).origin); } catch {}
+  if (isAgent) iframe.setAttribute("allow", "microphone"); else iframe.removeAttribute("allow");
   iframe.src = pg.tipo === "html" ? pg.base + "?u=" + encodeURIComponent(currentUser) : pg.base + "&pageName=" + pg.pageName;
   iframe.onload = () => {
     setTimeout(() => {
