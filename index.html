@@ -472,6 +472,19 @@ function rolarAbas(dir) {
   const nav = document.getElementById("nav-bar");
   nav.scrollBy({ left: dir * Math.max(200, nav.clientWidth * 0.6), behavior: "smooth" });
 }
+// Rola a barra de abas (só horizontalmente) para deixar a aba ativa visível; repete após carregar a fonte
+function centralizarAbaAtiva() {
+  const nav = document.getElementById("nav-bar");
+  const ir = () => {
+    const ativa = nav.querySelector(".nav-tab.active");
+    if (!ativa) return;
+    const n = nav.getBoundingClientRect(), t = ativa.getBoundingClientRect();
+    nav.scrollTo({ left: nav.scrollLeft + (t.left - n.left) - (n.width - t.width) / 2, behavior: "auto" });
+    atualizarSetas();
+  };
+  requestAnimationFrame(ir);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ir);
+}
 function atualizarSetas() {
   const nav = document.getElementById("nav-bar");
   document.getElementById("nav-prev").disabled = nav.scrollLeft <= 2;
@@ -512,8 +525,8 @@ function abrirPagina(key) {
   document.querySelectorAll(".nav-tab").forEach(b => {
     const on = b.dataset.id === key;
     b.classList.toggle("active", on);
-    if (on) b.scrollIntoView({ block: "nearest", inline: "nearest" });
   });
+  centralizarAbaAtiva();
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
   loader.style.opacity = "1"; loader.style.display = "flex";
