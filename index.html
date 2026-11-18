@@ -758,10 +758,12 @@ function trackPage(pageName, username) {
     gtag('event', 'page_view', { page_title: pageName, user_login: username || 'unknown' });
   }
 }
-// ── Auto refresh do dashboard (30 min) ──
+// ── Auto refresh do dashboard (30 min) — não recarrega abas de agente (tipo html) ──
 setInterval(() => {
   if (!currentToken) return;
   if (document.getElementById("portal-screen").style.display !== "flex") return;
+  const pg = currentPages.find(p => p.key === localStorage.getItem("mcpack_page"));
+  if (!pg || pg.tipo === "html") return;
   const iframe = document.getElementById("report-iframe");
   const src = iframe.getAttribute("src");
   if (!src) return;
