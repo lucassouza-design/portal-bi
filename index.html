@@ -31,7 +31,7 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; }
   body { font-family:'Poppins',system-ui,sans-serif; background:var(--bg); color:var(--text); transition:background 0.4s,color 0.4s; }
-  button { font-family:inherit; }
+  button, input, select, textarea { font-family:inherit; }
   :focus-visible { outline:2px solid var(--navy); outline-offset:2px; }
 
   /* ===== LOGIN ===== */
@@ -84,46 +84,52 @@
 
   /* ===== PORTAL ===== */
   /* ===== SHELL COM MENU LATERAL ===== */
-  #app-screen { display:none; height:100vh; overflow:hidden; background:var(--page-bg); --w:264px; }
-  #app-screen.mini { --w:78px; }
-  .lat-side { width:var(--w); flex:0 0 var(--w); height:100vh; transition:width .22s ease,flex-basis .22s ease; background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 2px,transparent 2px 22px),var(--hero-bg); color:#fff; display:flex; flex-direction:column; padding:14px 12px; gap:6px; border-radius:0 22px 22px 0; overflow:hidden; z-index:60; box-shadow:0 8px 24px rgba(14,49,105,.25); }
-  .lat-top { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 4px 14px; border-bottom:1px solid rgba(255,255,255,.16); margin-bottom:8px; min-height:62px; }
-  .lat-top img { height:38px; width:auto; }
-  #app-screen.mini .lat-top { justify-content:center; }
-  #app-screen.mini .lat-top img { display:none; }
-  .lat-tg { width:40px; height:40px; flex:0 0 40px; border-radius:12px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12); color:#fff; display:grid; place-items:center; cursor:pointer; }
-  .lat-tg:hover { background:rgba(255,255,255,.22); }
-  .lat-tg svg { width:20px; height:20px; transition:transform .2s; }
+  #app-screen { display:none; height:100vh; overflow:hidden; background:var(--page-bg); }
+  .lat-side { display:flex; height:100vh; flex:0 0 auto; z-index:60; }
+  .lat-rail { width:78px; flex:0 0 78px; background:#07183a; color:#fff; display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:6px; }
+  [data-theme="dark"] .lat-rail { background:#050f26; }
+  #app-screen.mini .lat-rail { border-radius:0 24px 24px 0; }
+  .lat-rail .sym { width:40px; height:auto; display:block; margin:2px 0 10px; background:none; border:0; padding:0; cursor:pointer; }
+  .lat-rail .sym img { width:100%; display:block; }
+  .lat-rail-btns { display:flex; flex-direction:column; gap:6px; align-items:center; width:100%; }
+  .lat-rail .sp { flex:1; }
+  .rb { width:62px; border:0; background:transparent; color:rgba(255,255,255,.7); display:flex; flex-direction:column; align-items:center; gap:4px; padding:9px 0 8px; border-radius:12px; font-size:9.5px; font-weight:500; cursor:pointer; font-family:inherit; }
+  .rb svg { width:22px; height:22px; }
+  .rb:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .rb.on { background:var(--navy2); color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); }
   #app-screen.mini .lat-tg svg { transform:rotate(180deg); }
+  .lat-panel { width:226px; flex:0 0 226px; background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 2px,transparent 2px 22px),var(--hero-bg); color:#fff; padding:20px 12px 14px; display:flex; flex-direction:column; gap:3px; border-radius:0 24px 24px 0; box-shadow:0 8px 24px rgba(14,49,105,.25); overflow:hidden; }
+  #app-screen.mini .lat-panel { display:none; }
+  .lat-plogo { padding:2px 12px 14px; }
+  .lat-plogo img { width:150px; height:auto; display:block; }
+  .lat-panel h4 { margin:2px 10px 12px; font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; opacity:.85; }
   .lat-nav { flex:1; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:2px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.3) transparent; }
-  .lat-sec { display:flex; align-items:center; gap:12px; width:100%; margin-top:10px; padding:0 12px; min-height:34px; border:0; background:transparent; border-radius:10px; font-family:inherit; font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.72); cursor:pointer; white-space:nowrap; text-align:left; }
-  .lat-sec:hover { background:rgba(255,255,255,.1); color:#fff; }
-  .lat-sec > svg { width:18px; height:18px; flex:0 0 18px; }
-  .lat-sec .lbl { flex:1; overflow:hidden; text-overflow:ellipsis; }
-  .lat-sec .chv { display:flex; }
-  .lat-sec .chv svg { width:14px; height:14px; transition:transform .18s; }
-  .lat-grp.closed .chv svg { transform:rotate(-90deg); }
-  .lat-grp.closed .lat-items { display:none; }
-  .lat-items { display:flex; flex-direction:column; gap:2px; }
-  #app-screen.mini .lat-sec { justify-content:center; padding:0; margin-top:8px; }
-  #app-screen.mini .lat-sec .chv { display:none; }
-  #app-screen.mini .lat-grp { border-top:1px solid rgba(255,255,255,.15); margin-top:6px; }
-  .lat-it { display:flex; align-items:center; gap:12px; min-height:42px; padding:0 12px; border-radius:12px; color:rgba(255,255,255,.9); font-size:13.5px; font-weight:600; cursor:pointer; border:0; background:transparent; width:100%; text-align:left; font-family:inherit; white-space:nowrap; }
-  .lat-it svg { width:20px; height:20px; flex:0 0 20px; }
-  .lat-it:hover { background:rgba(255,255,255,.14); }
-  .lat-it.on { background:#fff; color:#144387; }
-  .lat-it .lbl { overflow:hidden; text-overflow:ellipsis; }
-  .lat-it.sub { padding-left:24px; min-height:38px; font-weight:500; font-size:13px; }
-  .lat-it.sub svg { width:16px; height:16px; flex-basis:16px; }
-  #app-screen.mini .lat-it, #app-screen.mini .lat-it.sub { justify-content:center; padding:0; }
-  #app-screen.mini .lbl { display:none; }
-  .lat-foot { border-top:1px solid rgba(255,255,255,.16); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
-  .lat-user { display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:12px; background:rgba(255,255,255,.1); min-height:46px; white-space:nowrap; overflow:hidden; }
+  .lat-it { display:flex; align-items:center; gap:12px; min-height:40px; padding:0 12px; border-radius:12px; color:rgba(255,255,255,.9); font-size:13px; font-weight:500; cursor:pointer; border:0; background:transparent; width:100%; text-align:left; font-family:inherit; }
+  .lat-it svg { width:19px; height:19px; flex:0 0 19px; }
+  .lat-it:hover { background:rgba(255,255,255,.13); }
+  .lat-it.on { background:#fff; color:#144387; font-weight:600; }
+  .lat-it .lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lat-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:rgba(255,255,255,.12); min-height:48px; margin-top:8px; overflow:hidden; }
   .lat-user .avatar { flex:0 0 34px; width:34px; height:34px; }
-  .lat-user strong { display:block; font-size:13px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; }
-  .lat-user small { display:block; font-size:11px; color:rgba(255,255,255,.7); }
-  #app-screen.mini .lat-user { justify-content:center; padding:6px 0; background:transparent; }
-  #app-screen.mini .lat-user > div { display:none; }
+  .lat-user strong { display:block; font-size:12.5px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lat-user small { display:block; font-size:10.5px; color:rgba(255,255,255,.72); }
+  .avatar.foto { background-size:cover; background-position:center; color:transparent; }
+  .perfil { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+  .perfil .avatar-lg { width:88px; height:88px; flex:0 0 88px; border-radius:50%; background:var(--navy); color:#fff; font-size:28px; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; background-size:cover; background-position:center; border:3px solid var(--bg2); }
+  .perfil .avatar-lg.foto { color:transparent; }
+  .perfil h2 { font-size:20px; font-weight:700; color:var(--head); margin:0 0 2px; }
+  .perfil .sub { font-size:13px; color:var(--muted); margin-bottom:8px; }
+  .pill { display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600; background:var(--tab-hover); color:var(--navy); margin-right:6px; }
+  .pill.ok { background:#e1f4e8; color:#17803d; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-top:14px; }
+  .tile { background:var(--white); border:1px solid var(--border); border-left:4px solid var(--navy); border-radius:12px; padding:14px 16px; display:flex; gap:12px; align-items:center; min-width:0; }
+  .tile .ti { width:36px; height:36px; flex:0 0 36px; border-radius:10px; background:var(--tab-hover); color:var(--navy); display:grid; place-items:center; }
+  .tile .ti svg { width:18px; height:18px; }
+  .tile small { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .tile b { font-size:13.5px; font-weight:600; color:var(--text); word-break:break-word; }
+  .pes-n { display:flex; align-items:center; gap:10px; }
+  .pes-n .avatar { background:var(--navy); color:#fff; }
+  .pes-n .avatar.foto { color:transparent; background-size:cover; background-position:center; }
   .lat-main { flex:1; min-width:0; height:100vh; display:flex; flex-direction:column; padding:12px 14px 12px 16px; gap:10px; overflow:hidden; }
   .lat-bar { display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--border); border-radius:16px; padding:0 18px; min-height:52px; box-shadow:var(--card-shadow); flex-shrink:0; }
   .lat-bar h2 { font-size:15px; font-weight:700; color:var(--head); margin:0; }
@@ -247,9 +253,11 @@
     .topbar-label, .user-badge strong { display:none; }
     .user-badge { padding:3px; }
     .lat-burger { display:flex; }
-    .lat-side { position:fixed; left:0; top:0; width:264px; transform:translateX(-105%); transition:transform .22s ease; }
+    .lat-side { position:fixed; left:0; top:0; transform:translateX(-105%); transition:transform .22s ease; }
+    .lat-tg { display:none !important; }
+    #app-screen.mini .lat-panel { display:flex; }
+    #app-screen.mini .lat-rail { border-radius:0; }
     #app-screen.open .lat-side { transform:none; }
-    #app-screen.mini { --w:264px; }
     .lat-main { padding:10px; }
   }
   @media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } .loader-ring { animation:spin .8s linear infinite !important; } }
@@ -327,15 +335,19 @@
 <!-- APP (menu lateral) -->
 <div id="app-screen">
   <aside class="lat-side" id="lat-side">
-    <div class="lat-top">
-      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <button type="button" class="lat-tg" id="lat-tg" aria-label="Recolher ou expandir o menu" title="Recolher / expandir" onclick="alternarMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="lat-rail">
+      <button type="button" class="sym" title="Início" aria-label="Início" onclick="irParaInicio()"><img src="simbolo_mcpack_branco.png" alt="MCPack"></button>
+      <div class="lat-rail-btns" id="lat-rail-btns"></div>
+      <div class="sp"></div>
+      <button type="button" class="rb lat-tg" id="lat-tg" title="Recolher / expandir o painel" aria-label="Recolher ou expandir o painel" onclick="alternarMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>Painel</span></button>
+      <button type="button" class="rb" title="Claro / Escuro" onclick="alternarTema()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg><span>Tema</span></button>
+      <button type="button" class="rb" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg><span>Sair</span></button>
     </div>
-    <nav class="lat-nav" id="lat-nav" aria-label="Menu principal"></nav>
-    <div class="lat-foot">
-      <button type="button" class="lat-it" title="Claro / Escuro" onclick="alternarTema()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg><span class="lbl">Claro / Escuro</span></button>
+    <div class="lat-panel">
+      <div class="lat-plogo"><img src="logo_mcpack_horizontal_branco.png" alt="MCPack Equipamentos"></div>
+      <h4 id="lat-ptitle"></h4>
+      <nav class="lat-nav" id="lat-nav" aria-label="Menu principal"></nav>
       <div class="lat-user"><span class="avatar" id="user-avatar"></span><div><strong id="display-user"></strong><small id="user-role"></small></div></div>
-      <button type="button" class="lat-it" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg><span class="lbl">Sair</span></button>
     </div>
   </aside>
   <main class="lat-main">
@@ -580,15 +592,23 @@ async function rhCall(action, extra) {
   if (!resp.ok || !data.ok) throw new Error(data.error || "Erro");
   return data;
 }
-let rhNome = null;
+let rhNome = null, rhFoto = null;
 let hubTarget = null;
+function iniciaisDe(nome) { return String(nome || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join(""); }
+function aplicarFoto(el, url) {
+  if (!el) return;
+  if (url) { el.style.backgroundImage = 'url("' + url + '")'; el.classList.add("foto"); }
+  else { el.style.backgroundImage = ""; el.classList.remove("foto"); }
+}
 async function rhDetectar() {
-  rhAreas = []; rhNome = null;
+  rhAreas = []; rhNome = null; rhFoto = null;
   try {
     const d = await rhCall("me");
     rhAreas = d.areas || [];
     rhNome = d.nome || null;
+    rhFoto = d.foto || null;
   } catch (e) { rhAreas = []; }
+  aplicarFoto(document.getElementById("user-avatar"), rhFoto);
 }
 const RH_ABAS = [
   { key: "meus", label: "Meus documentos", area: "colaborador", modo: "colab", icone: "doc" },
@@ -608,7 +628,13 @@ const ICONES = {
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
-  chev: '<path d="M6 9l6 6 6-6"/>'
+  chev: '<path d="M6 9l6 6 6-6"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  phone: '<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  build: '<path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/>',
+  brief: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 13h18"/>',
+  cam: '<path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>'
 };
 function svgIcone(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONES[n] || "") + '</svg>'; }
 function entradasDisponiveis() {
@@ -619,54 +645,70 @@ function entradasDisponiveis() {
   if (isAdmin()) e.push("admin");
   return e;
 }
-function gruposSalvos() { try { return JSON.parse(localStorage.getItem("mcpack_menu_grupos") || "{}"); } catch (e) { return {}; } }
-function salvarGrupo(g, fechado) { const o = gruposSalvos(); o[g] = fechado; try { localStorage.setItem("mcpack_menu_grupos", JSON.stringify(o)); } catch (e) {} }
+let menuGrupo = null, menuAtivo = null;
+function gruposMenu() {
+  const abas = m => RH_ABAS.filter(a => a.modo === m && rhAreas.includes(a.area)).map(a => ({ k: "rh:" + a.key, l: a.label, i: a.icone, fn: () => rhAbrirAba(a.key) }));
+  const g = [];
+  const colab = abas("colab"), rh = abas("rh");
+  if (colab.length) g.push({ k: "colab", t: "Portal do Colaborador", r: "Colab.", i: "user", itens: colab });
+  if (rh.length) g.push({ k: "rh", t: "Área do RH", r: "RH", i: "people", itens: rh });
+  if (currentPages.length) g.push({ k: "dash", t: "Dashboards", r: "Dashb.", i: "chart", itens: [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" })).map(pg => ({ k: "dash:" + pg.key, l: pg.label, i: "chart", fn: () => abrirPagina(pg.key) })) });
+  if (isAdmin()) g.push({ k: "admin", t: "Administração", r: "Admin", i: "shield", itens: [{ k: "admin", l: "Usuários e acessos", i: "shield", fn: irParaAdmin }] });
+  return g;
+}
+function grupoDaChave(k) {
+  if (k === "home") return "home";
+  if (k === "admin") return "admin";
+  if (k.startsWith("dash:")) return "dash";
+  if (k.startsWith("rh:")) { const a = RH_ABAS.find(x => x.key === k.slice(3)); return a ? a.modo : null; }
+  return null;
+}
+function irParaInicio() { if (entradasDisponiveis().length >= 2) mostrarHub(); else { const g = gruposMenu()[0]; if (g) g.itens[0].fn(); } }
+function abrirGrupo(k) { const g = gruposMenu().find(x => x.k === k); if (!g) return; menuGrupo = k; renderMenu(); fecharMenuMobile(); g.itens[0].fn(); }
 function construirMenu() {
+  const gs = gruposMenu();
+  const box = document.getElementById("lat-rail-btns");
+  box.innerHTML = "";
+  const btn = (k, rot, ic, fn) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "rb"; b.dataset.g = k; b.title = rot;
+    b.innerHTML = svgIcone(ic) + "<span></span>"; b.querySelector("span").textContent = rot;
+    b.onclick = fn; box.appendChild(b);
+  };
+  if (entradasDisponiveis().length >= 2) btn("home", "Início", "home", () => { fecharMenuMobile(); mostrarHub(); });
+  gs.forEach(g => btn(g.k, g.r, g.i, () => abrirGrupo(g.k)));
+  if (!menuGrupo || (menuGrupo !== "home" && !gs.find(g => g.k === menuGrupo))) menuGrupo = gs[0] ? gs[0].k : null;
+  renderMenu();
+}
+function renderMenu() {
+  const gs = gruposMenu();
+  document.querySelectorAll("#lat-rail-btns .rb").forEach(b => b.classList.toggle("on", b.dataset.g === menuGrupo));
   const nav = document.getElementById("lat-nav");
   nav.innerHTML = "";
-  const abas = m => RH_ABAS.filter(a => a.modo === m && rhAreas.includes(a.area));
-  const nGrupos = [abas("colab").length, abas("rh").length, currentPages.length, isAdmin() ? 1 : 0].filter(Boolean).length;
-  let box = nav;
-  const grupo = (g, titulo, icone) => {
-    const salvos = gruposSalvos();
-    const fechado = g in salvos ? salvos[g] : (nGrupos > 1 && g === "dash");
-    const w = document.createElement("div");
-    w.className = "lat-grp" + (fechado ? " closed" : ""); w.dataset.g = g;
-    const h = document.createElement("button");
-    h.type = "button"; h.className = "lat-sec"; h.title = titulo;
-    h.setAttribute("aria-expanded", String(!fechado));
-    h.innerHTML = svgIcone(icone) + '<span class="lbl"></span><span class="chv">' + svgIcone("chev") + '</span>';
-    h.querySelector(".lbl").textContent = titulo;
-    h.onclick = () => { const c = w.classList.toggle("closed"); salvarGrupo(g, c); h.setAttribute("aria-expanded", String(!c)); };
-    const items = document.createElement("div");
-    items.className = "lat-items";
-    w.appendChild(h); w.appendChild(items); nav.appendChild(w);
-    box = items;
-  };
-  const item = (k, label, icone, sub, fn) => {
+  const item = (k, label, icone, fn) => {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "lat-it" + (sub ? " sub" : ""); b.dataset.k = k; b.title = label;
+    b.type = "button"; b.className = "lat-it" + (k === menuAtivo ? " on" : ""); b.dataset.k = k; b.title = label;
     b.innerHTML = svgIcone(icone) + '<span class="lbl"></span>';
     b.querySelector(".lbl").textContent = label;
     b.onclick = () => { fecharMenuMobile(); fn(); };
-    box.appendChild(b);
+    nav.appendChild(b);
   };
-  if (entradasDisponiveis().length >= 2) item("home", "Início", "home", false, mostrarHub);
-  if (abas("colab").length) { grupo("colab", "Portal do Colaborador", "user"); abas("colab").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
-  if (abas("rh").length) { grupo("rh", "Área do RH", "people"); abas("rh").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
-  if (currentPages.length) {
-    grupo("dash", "Dashboards", "chart");
-    [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }))
-      .forEach(pg => item("dash:" + pg.key, pg.label, "chart", true, () => abrirPagina(pg.key)));
+  if (menuGrupo === "home") {
+    document.getElementById("lat-ptitle").textContent = "Atalhos";
+    gs.forEach(g => item("g:" + g.k, g.t, g.i, () => abrirGrupo(g.k)));
+  } else {
+    const g = gs.find(x => x.k === menuGrupo);
+    document.getElementById("lat-ptitle").textContent = g ? g.t : "";
+    if (g) g.itens.forEach(i => item(i.k, i.l, i.i, i.fn));
   }
-  if (isAdmin()) { grupo("admin", "Administração", "shield"); item("admin", "Usuários e acessos", "shield", false, irParaAdmin); }
+  const on = nav.querySelector(".lat-it.on");
+  if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
 }
 function marcarAtivo(k) {
-  document.querySelectorAll("#lat-nav .lat-it").forEach(b => b.classList.toggle("on", b.dataset.k === k));
-  const on = document.querySelector("#lat-nav .lat-it.on");
-  const w = on && on.closest(".lat-grp");
-  if (w && w.classList.contains("closed")) { w.classList.remove("closed"); const h = w.querySelector(".lat-sec"); if (h) h.setAttribute("aria-expanded", "true"); }
-  if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
+  menuAtivo = k;
+  const g = grupoDaChave(k);
+  if (g) menuGrupo = g;
+  renderMenu();
 }
 function mostrarView(nome, titulo, sub) {
   document.querySelectorAll("#app-screen .view").forEach(v => v.classList.toggle("on", v.id === "view-" + nome));
@@ -742,17 +784,60 @@ async function rhRenderMeus(c) {
     ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th><th>Tipo</th><th>Publicado em</th><th>Status</th><th>Ação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
     : '<div class="rh-vazio">Nenhum documento publicado ainda.</div>') + '</div>';
 }
+function rhPrepararFoto(file) {
+  return new Promise((res, rej) => {
+    if (!file || !/^image\//.test(file.type)) return rej(new Error("Escolha um arquivo de imagem (JPG ou PNG)."));
+    const img = new Image(), u = URL.createObjectURL(file);
+    img.onload = () => {
+      const t = 384, l = Math.min(img.width, img.height), cv = document.createElement("canvas");
+      cv.width = cv.height = t;
+      cv.getContext("2d").drawImage(img, (img.width - l) / 2, (img.height - l) / 2, l, l, 0, 0, t, t);
+      URL.revokeObjectURL(u);
+      res(cv.toDataURL("image/jpeg", 0.85).split(",")[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); rej(new Error("Não foi possível ler esta imagem. Use JPG ou PNG.")); };
+    img.src = u;
+  });
+}
+async function rhEnviarFoto(file, employeeId) {
+  const b64 = await rhPrepararFoto(file);
+  return await rhCall("foto_enviar", employeeId ? { employee_id: employeeId, jpg_b64: b64 } : { jpg_b64: b64 });
+}
+async function rhTrocarMinhaFoto(inp) {
+  const msg = document.getElementById("rh-foto-msg");
+  try {
+    msg.textContent = "Enviando…";
+    const r = await rhEnviarFoto(inp.files[0], null);
+    rhFoto = r.foto_url;
+    aplicarFoto(document.getElementById("user-avatar"), rhFoto);
+    aplicarFoto(document.getElementById("rh-avatar-lg"), rhFoto);
+    msg.textContent = r.odoo === "ok" ? "Foto atualizada no portal e no Odoo." : "Foto atualizada no portal. Não foi possível gravar no Odoo agora (" + r.odoo + ").";
+  } catch (e) { msg.textContent = e.message; }
+  inp.value = "";
+}
+async function rhTrocarFotoDe(inp, id) {
+  try {
+    const r = await rhEnviarFoto(inp.files[0], id);
+    const av = document.getElementById("rh-pav-" + id);
+    aplicarFoto(av, r.foto_url);
+    if (r.odoo !== "ok") alert("Foto salva no portal, mas não foi gravada no Odoo (" + r.odoo + ").");
+  } catch (e) { alert(e.message); }
+  inp.value = "";
+}
 async function rhRenderDados(c) {
   const { dados } = await rhCall("meus_dados");
   if (!dados) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">Seu cadastro ainda não foi encontrado.</div></div>'; return; }
-  const campos = [["Nome", dados.name], ["Matrícula", dados.matricula], ["Departamento", dados.department_name], ["Cargo", dados.cargo_oficial || dados.job_title], ["Gestor", dados.gestor_nome], ["Admissão", dados.data_admissao ? rhFmtData(dados.data_admissao) : null], ["E-mail corporativo", dados.work_email], ["Telefone", dados.telefone_trabalho || dados.celular]];
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus dados</div><div class="table-scroll"><table class="admin-table"><tbody>' + campos.map(x => '<tr><td style="width:220px;color:var(--muted);font-weight:600">' + x[0] + '</td><td>' + esc(x[1] || "—") + '</td></tr>').join("") + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH.</p></div>';
+  const campos = [["mail", "E-mail corporativo", dados.work_email], ["phone", "Telefone", dados.telefone_trabalho || dados.celular], ["build", "Departamento", dados.department_name], ["brief", "Cargo", dados.cargo_oficial || dados.job_title], ["user", "Gestor", dados.gestor_nome], ["cal", "Admissão", dados.data_admissao ? rhFmtData(dados.data_admissao) : null]];
+  c.innerHTML = '<div class="admin-card"><div class="perfil"><div class="avatar-lg" id="rh-avatar-lg">' + esc(iniciaisDe(dados.name)) + '</div><div><h2>' + esc(dados.name) + '</h2><div class="sub">' + esc(dados.cargo_oficial || dados.job_title || "") + (dados.department_name ? " · " + esc(dados.department_name) : "") + '</div><div>' + (dados.matricula ? '<span class="pill">Matrícula ' + esc(dados.matricula) + '</span>' : '') + '<span class="pill ok">Ativo</span></div></div><div style="margin-left:auto;text-align:right"><label class="btn-edit" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">' + svgIcone("cam").replace("<svg ", '<svg width="16" height="16" ') + 'Trocar foto<input type="file" accept="image/*" hidden onchange="rhTrocarMinhaFoto(this)"></label><div id="rh-foto-msg" style="font-size:12px;color:var(--muted);margin-top:6px;max-width:260px"></div></div></div></div>' +
+    '<div class="tiles">' + campos.map(x => '<div class="tile"><span class="ti">' + svgIcone(x[0]) + '</span><div><small>' + x[1] + '</small><b>' + esc(x[2] || "—") + '</b></div></div>').join("") + '</div>' +
+    '<p style="margin:12px 4px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH. A foto você mesmo(a) pode trocar.</p>';
+  aplicarFoto(document.getElementById("rh-avatar-lg"), dados.foto_url);
 }
 async function rhRenderPessoas(c) {
   const { pessoas } = await rhCall("pessoas_list");
-  const linhas = pessoas.map(p => '<tr><td><strong>' + esc(p.matricula || "—") + '</strong></td><td>' + esc(p.name) + '</td><td>' + esc(p.department_name || "—") + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
+  const linhas = pessoas.map(p => '<tr><td><strong>' + esc(p.matricula || "—") + '</strong></td><td><div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '" id="rh-pav-' + p.id + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span><label class="btn-edit" style="min-height:28px;display:inline-flex;align-items:center;cursor:pointer;padding:0 8px" title="Trocar foto">' + svgIcone("cam").replace("<svg ", '<svg width="14" height="14" ') + '<input type="file" accept="image/*" hidden onchange="rhTrocarFotoDe(this,' + p.id + ')"></label></div></td><td>' + esc(p.department_name || "—") + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
   const semMat = pessoas.filter(p => !p.matricula && p.active).length;
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span class="badge-page">' + pessoas.length + ' no Odoo · ' + semMat + ' ativos sem matrícula</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Somente leitura por enquanto. Cadastro e edição pelo portal entram na próxima etapa.</p></div>';
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span class="badge-page">' + pessoas.length + ' no Odoo · ' + semMat + ' ativos sem matrícula</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Somente leitura por enquanto, exceto a foto. Cadastro e edição pelo portal entram na próxima etapa.</p></div>';
 }
 // ── Importação de documentos em PDF (leitura no navegador: texto do PDF, com OCR de reserva) ──
 const RH_LIBS = {
