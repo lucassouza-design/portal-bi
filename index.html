@@ -754,9 +754,205 @@ async function rhRenderPessoas(c) {
   const semMat = pessoas.filter(p => !p.matricula && p.active).length;
   c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span class="badge-page">' + pessoas.length + ' no Odoo · ' + semMat + ' ativos sem matrícula</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Somente leitura por enquanto. Cadastro e edição pelo portal entram na próxima etapa.</p></div>';
 }
+// ── Importação de documentos em PDF (leitura no navegador: texto do PDF, com OCR de reserva) ──
+const RH_LIBS = {
+  pdfjs: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+  pdfjsWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  pdflib: "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
+  tess: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"
+};
+const rhScripts = {};
+function rhLoadScript(url) {
+  if (!rhScripts[url]) rhScripts[url] = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = url; s.onload = res; s.onerror = () => { delete rhScripts[url]; rej(new Error("Não foi possível carregar uma biblioteca de leitura de PDF.")); };
+    document.head.appendChild(s);
+  });
+  return rhScripts[url];
+}
+const RH_MESES = { janeiro: 1, fevereiro: 2, marco: 3, abril: 4, maio: 5, junho: 6, julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12 };
+function rhSemAcento(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+// Lê matrícula (Código ao lado do nome), nome, competência e tipo do cabeçalho do recibo.
+function rhParseRecibo(texto) {
+  const t = rhSemAcento(texto).replace(/[|]/g, " ");
+  const up = t.toUpperCase();
+  const r = { matricula: null, nome: null, competencia: null, tipo: null, vias: (up.match(/RECIBO\s+DE\s+PAGAMENTO/g) || []).length };
+  const ini = up.search(/C.DIGO\s+NOME/);
+  const alvo = ini >= 0 ? up.slice(ini) : up.split("\n").filter(l => !/^\s*(RUA|AV\b|AVENIDA|R\.)/.test(l)).join("\n");
+  const m = alvo.match(/(?:^|[\s])0*(\d{1,8})\s+([A-Z][A-Z'.-]{1,}(?:\s+[A-Z][A-Z'.-]{1,}){1,7})/);
+  if (m) {
+    r.matricula = m[1];
+    // corta o nome antes de números (CBO etc.) e de palavras de cabeçalho que o OCR possa grudar
+    r.nome = m[2].replace(/\s+(CBO|EMPRESA|LOCAL|DEPTO|SETOR|SECAO|FOLHA)\b.*$/, "").trim();
+  }
+  const c = up.match(/(JANEIRO|FEVEREIRO|MARCO|ABRIL|MAIO|JUNHO|JULHO|AGOSTO|SETEMBRO|OUTUBRO|NOVEMBRO|DEZEMBRO)\s*\/\s*(\d{4})/);
+  if (c) r.competencia = c[2] + "-" + String(RH_MESES[c[1].toLowerCase()]).padStart(2, "0");
+  if (/\bADTO\b|ADIANTAMENTO/.test(up) && !/\bFOLHA MENSAL\b/.test(up)) r.tipo = "adiantamento";
+  else if (/13\s*[O°]?\s*SAL|DECIMO\s+TERCEIRO/.test(up)) r.tipo = "13o";
+  else if (/\bFERIAS\b/.test(up)) r.tipo = "ferias";
+  else r.tipo = "holerite";
+  return r;
+}
+async function rhTextoPagina(page) {
+  const tc = await page.getTextContent();
+  const linhas = [];
+  tc.items.filter(i => i.str && i.str.trim()).forEach(i => {
+    const y = i.transform[5], x = i.transform[4];
+    const l = linhas.find(z => Math.abs(z.y - y) < 3);
+    if (l) l.p.push({ x, s: i.str }); else linhas.push({ y, p: [{ x, s: i.str }] });
+  });
+  return linhas.sort((a, b) => b.y - a.y).map(l => l.p.sort((a, b) => a.x - b.x).map(p => p.s).join("  ")).join("\n");
+}
+let rhOcrWorker = null;
+async function rhOcr(page) {
+  await rhLoadScript(RH_LIBS.tess);
+  if (!rhOcrWorker) rhOcrWorker = await Tesseract.createWorker("eng");
+  const vp = page.getViewport({ scale: 2.5 });
+  const cv = document.createElement("canvas");
+  cv.width = Math.ceil(vp.width); cv.height = Math.ceil(vp.height);
+  await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+  const { data } = await rhOcrWorker.recognize(cv);
+  return data.text || "";
+}
+async function rhLerPagina(page) {
+  let texto = await rhTextoPagina(page);
+  let r = rhParseRecibo(texto);
+  r.origem = "texto";
+  if (!r.matricula || !r.competencia) {
+    const o = await rhOcr(page);
+    const r2 = rhParseRecibo(o);
+    if (r2.matricula || r2.competencia || r2.vias) { r = r2; r.origem = "ocr"; }
+  }
+  return r;
+}
+async function rhRecortarPagina(PDFLib, srcDoc, idx, duasVias) {
+  const doc = await PDFLib.PDFDocument.create();
+  const [p] = await doc.copyPages(srcDoc, [idx]);
+  if (duasVias) {
+    const { width, height } = p.getSize();
+    const y0 = height * 0.495;
+    p.setCropBox(0, y0, width, height - y0); p.setMediaBox(0, y0, width, height - y0);
+  }
+  doc.addPage(p);
+  return await doc.save();
+}
+function rhB64(bytes) {
+  let s = ""; const n = 0x8000;
+  for (let i = 0; i < bytes.length; i += n) s += String.fromCharCode.apply(null, bytes.subarray(i, i + n));
+  return btoa(s);
+}
 async function rhRenderDocs(c) {
-  const cards = rhTipos.map(t => '<span class="badge-page" title="' + esc(t.periodicidade) + '">' + esc(t.label) + '</span>').join(" ");
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Enviar documentos</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">' + cards + '</div><div class="rh-dropz"><b>Importação por ZIP ou PDFs</b><br><span style="font-size:12px">Em construção: depende do PDF de exemplo para ler a matrícula.</span></div></div>';
+  const opts = '<option value="auto">Automático (pelo cabeçalho do recibo)</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>').join("");
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Importar PDF de recibos</div>' +
+    '<p style="font-size:13px;color:var(--muted);margin:0 0 12px">Envie o PDF com todos os colaboradores. O portal separa uma página por pessoa, lê a matrícula e abre uma tela de conferência. Nada fica visível para o colaborador antes de você publicar.</p>' +
+    '<div class="rh-filtros"><div><label>Tipo</label><select id="rh-i-tipo">' + opts + '</select></div>' +
+    '<div><label>Competência (só se não detectar)</label><input id="rh-i-comp" placeholder="2026-11" maxlength="7"></div>' +
+    '<div><label>Arquivo PDF</label><input id="rh-i-file" type="file" accept="application/pdf,.pdf" style="padding-top:8px"></div>' +
+    '<button class="btn-add" id="rh-i-btn" onclick="rhImportar()">Ler e enviar</button></div>' +
+    '<div id="rh-i-prog" style="font-size:13px;color:var(--muted);min-height:20px"></div></div>' +
+    '<div class="admin-card" id="rh-lotes-card"><div class="admin-card-h">Lotes recentes</div><div id="rh-lotes"></div></div>';
+  await rhCarregarLotes();
+}
+const RH_ST = { processando: "Enviando", conferencia: "Em conferência", publicado: "Publicado", cancelado: "Cancelado", erro: "Erro" };
+async function rhCarregarLotes() {
+  const box = document.getElementById("rh-lotes"); if (!box) return;
+  try {
+    const { lotes } = await rhCall("lotes_list");
+    if (!lotes.length) { box.innerHTML = '<div class="rh-vazio">Nenhum lote ainda.</div>'; return; }
+    box.innerHTML = '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Enviado em</th><th>Tipo</th><th>Competência</th><th>Arquivo</th><th>Docs</th><th>Sem vínculo</th><th>Status</th><th></th></tr></thead><tbody>' + lotes.map(l =>
+      '<tr><td>' + rhFmtData(l.created_at) + '</td><td>' + esc(rhTipoLabel(l.tipo_key)) + '</td><td>' + esc(l.competencia) + '</td><td>' + esc(l.nome_arquivo || "—") + '</td><td>' + l.total + '</td><td>' + (l.sem_vinculo || "—") + '</td><td>' + esc(RH_ST[l.status] || l.status) + '</td><td>' + (["processando", "conferencia"].includes(l.status) || l.status === "publicado" ? '<button class="btn-edit" onclick="rhConferirLote(\'' + l.id + '\')">' + (l.status === "publicado" ? "Ver" : "Conferir") + '</button>' : "") + '</td></tr>').join("") + '</tbody></table></div>';
+  } catch (e) { box.innerHTML = '<div class="rh-vazio">' + esc(e.message) + '</div>'; }
+}
+async function rhImportar() {
+  const prog = document.getElementById("rh-i-prog"), btn = document.getElementById("rh-i-btn");
+  const file = document.getElementById("rh-i-file").files[0];
+  const tipoSel = document.getElementById("rh-i-tipo").value;
+  const compManual = document.getElementById("rh-i-comp").value.trim();
+  if (!file) { prog.textContent = "Escolha o arquivo PDF."; return; }
+  if (compManual && !/^\d{4}-(0[1-9]|1[0-2])$/.test(compManual)) { prog.textContent = "Competência no formato AAAA-MM, por exemplo 2026-11."; return; }
+  btn.disabled = true;
+  const lotes = {}; const res = { enviados: 0, vinculados: 0, duplicados: 0, ignoradas: 0, semComp: 0 };
+  try {
+    prog.textContent = "Carregando leitor de PDF…";
+    await Promise.all([rhLoadScript(RH_LIBS.pdfjs), rhLoadScript(RH_LIBS.pdflib)]);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = RH_LIBS.pdfjsWorker;
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjsLib.getDocument({ data: buf.slice() }).promise;
+    const src = await PDFLib.PDFDocument.load(buf);
+    for (let i = 1; i <= pdf.numPages; i++) {
+      prog.textContent = "Lendo página " + i + " de " + pdf.numPages + "… (" + res.enviados + " enviadas)";
+      const page = await pdf.getPage(i);
+      const r = await rhLerPagina(page);
+      if (!r.matricula && !r.nome) { res.ignoradas++; continue; }
+      const tipo = tipoSel === "auto" ? r.tipo : tipoSel;
+      const comp = r.competencia || compManual;
+      if (!comp) { res.semComp++; continue; }
+      const k = tipo + "|" + comp;
+      if (!lotes[k]) lotes[k] = (await rhCall("lote_criar", { tipo_key: tipo, competencia: comp, nome_arquivo: file.name })).id;
+      const bytes = await rhRecortarPagina(PDFLib, src, i - 1, r.vias >= 2);
+      const d = await rhCall("doc_enviar", { lote_id: lotes[k], pdf_b64: rhB64(bytes), matricula_lida: r.matricula, nome_lido: r.nome, pagina: i, nome_arquivo: file.name });
+      if (d.duplicado) res.duplicados++; else { res.enviados++; if (d.vinculado) res.vinculados++; }
+    }
+    for (const id of Object.values(lotes)) await rhCall("lote_concluir", { id });
+    const ids = Object.values(lotes);
+    let msg = res.enviados + " recibos lidos (" + res.vinculados + " vinculados pela matrícula).";
+    if (res.duplicados) msg += " " + res.duplicados + " já existiam e foram ignorados.";
+    if (res.ignoradas) msg += " " + res.ignoradas + " páginas sem recibo foram ignoradas.";
+    if (res.semComp) msg += " " + res.semComp + " páginas sem competência: preencha o campo Competência e envie de novo.";
+    prog.textContent = msg;
+    if (ids.length === 1) await rhConferirLote(ids[0]); else await rhCarregarLotes();
+  } catch (e) { prog.textContent = "Erro: " + e.message; await rhCarregarLotes(); }
+  finally { btn.disabled = false; }
+}
+let rhPessoasMin = null;
+function rhNomeOk(lido, nome) {
+  const a = rhSemAcento(lido).toUpperCase().split(/\s+/).filter(Boolean), b = rhSemAcento(nome).toUpperCase().split(/\s+/).filter(Boolean);
+  if (!a.length || !b.length) return true;
+  return a[0] === b[0] && a[a.length - 1] === b[b.length - 1];
+}
+async function rhConferirLote(id) {
+  mostrarView("rh", "Conferência do lote", "Área do RH");
+  marcarAtivo("rh:docs");
+  const c = document.getElementById("rh-content");
+  c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
+  try {
+    const { lote, documentos } = await rhCall("lote_get", { id });
+    if (!rhPessoasMin) rhPessoasMin = (await rhCall("pessoas_min")).pessoas;
+    const aberto = ["processando", "conferencia"].includes(lote.status);
+    const pend = documentos.filter(d => !d.pessoa && d.status === "rascunho").length;
+    const prontos = documentos.filter(d => d.pessoa && d.status === "rascunho").length;
+    const sel = d => '<select id="rh-v-' + d.id + '" style="height:34px;border:1px solid var(--input-bd);border-radius:8px;max-width:240px"><option value="">Escolher pessoa…</option>' + rhPessoasMin.map(p => '<option value="' + p.id + '"' + (d.sugestao && d.sugestao.id === p.id ? " selected" : "") + '>' + esc(p.name) + (p.matricula ? " (" + esc(p.matricula) + ")" : "") + '</option>').join("") + '</select> <button class="btn-edit" onclick="rhVincular(\'' + d.id + '\',\'' + lote.id + '\')">Vincular</button>';
+    const linhas = documentos.map(d => {
+      let pessoa;
+      if (d.pessoa) pessoa = '<strong>' + esc(d.pessoa.name) + '</strong>' + (d.pessoa.matricula ? ' <span class="badge-page">' + esc(d.pessoa.matricula) + '</span>' : '') + (d.nome_lido && !rhNomeOk(d.nome_lido, d.pessoa.name) ? ' <span class="tag-admin" style="background:var(--danger)" title="O nome lido no PDF é diferente do cadastro">NOME DIFERENTE</span>' : '') + (d.pessoa.active ? '' : ' <span class="badge-page">arquivado</span>');
+      else pessoa = (aberto ? sel(d) : '<span class="badge-page" style="color:var(--danger)">sem vínculo</span>') + (d.sugestao ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Sugestão pelo nome: ' + esc(d.sugestao.name) + '</div>' : '');
+      return '<tr><td>' + esc(d.nome_original || "—") + '</td><td><strong>' + esc(d.matricula_lida || "—") + '</strong> · ' + esc(d.nome_lido || "—") + '</td><td>' + pessoa + '</td><td>' + (d.status === "publicado" ? "Publicado" : "Rascunho") + '</td><td style="white-space:nowrap"><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir</button>' + (aberto && d.status === "rascunho" ? ' <button class="btn-delete" onclick="rhRemoverDoc(\'' + d.id + '\',\'' + lote.id + '\')">Remover</button>' : '') + '</td></tr>';
+    }).join("");
+    c.innerHTML = '<div class="admin-card"><div class="admin-card-h">' + esc(rhTipoLabel(lote.tipo_key)) + ' · ' + esc(lote.competencia) + ' <span class="badge-page">' + esc(RH_ST[lote.status] || lote.status) + '</span></div>' +
+      '<p style="font-size:13px;color:var(--muted);margin:0 0 12px">' + esc(lote.nome_arquivo || "") + ' · ' + documentos.length + ' recibos · ' + prontos + ' prontos para publicar · ' + pend + ' sem vínculo</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+      (aberto ? '<button class="btn-add" onclick="rhPublicarLote(\'' + lote.id + '\',' + prontos + ',' + pend + ')"' + (prontos ? "" : " disabled") + '>Publicar ' + prontos + ' para os colaboradores</button><button class="btn-delete" onclick="rhCancelarLote(\'' + lote.id + '\')">Cancelar lote</button>' : '') +
+      '<button class="btn-edit" onclick="rhAbrirAba(\'docs\')">Voltar</button></div>' +
+      '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Origem</th><th>Lido no PDF</th><th>Colaborador</th><th>Status</th><th></th></tr></thead><tbody>' + linhas + '</tbody></table></div></div>';
+  } catch (e) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; }
+}
+async function rhVincular(docId, loteId) {
+  const v = document.getElementById("rh-v-" + docId).value;
+  if (!v) { alert("Escolha a pessoa."); return; }
+  try { await rhCall("doc_vincular", { id: docId, employee_id: Number(v) }); await rhConferirLote(loteId); } catch (e) { alert(e.message); }
+}
+async function rhRemoverDoc(docId, loteId) {
+  if (!confirm("Remover este recibo do lote?")) return;
+  try { await rhCall("doc_remover", { id: docId }); await rhConferirLote(loteId); } catch (e) { alert(e.message); }
+}
+async function rhPublicarLote(id, prontos, pend) {
+  const aviso = pend ? "\n\n" + pend + " sem vínculo continuam como rascunho." : "";
+  if (!confirm("Publicar " + prontos + " recibos? Cada colaborador passa a ver o seu em Meus documentos." + aviso)) return;
+  try { await rhCall("lote_publicar", { id }); await rhConferirLote(id); } catch (e) { alert(e.message); }
+}
+async function rhCancelarLote(id) {
+  if (!confirm("Cancelar o lote? Os rascunhos serão descartados.")) return;
+  try { await rhCall("lote_cancelar", { id }); await rhAbrirAba("docs"); } catch (e) { alert(e.message); }
 }
 async function rhRenderConsolidado(c) {
   const opts = '<option value="">Todos</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>').join("");
