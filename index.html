@@ -327,10 +327,10 @@
         <h1>Bem-vindo</h1>
         <p class="sub">Acesse com suas credenciais corporativas.</p>
         <div class="field">
-          <label for="input-user">Usuário <span class="req">*</span></label>
+          <label for="input-user">Usuário ou e-mail <span class="req">*</span></label>
           <div class="input-wrap">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>
-            <input type="text" id="input-user" placeholder="seu.usuario" autocomplete="username"/>
+            <input type="text" id="input-user" placeholder="seu.usuario ou nome@mcpack.com.br" autocomplete="username" autocapitalize="none" spellcheck="false"/>
           </div>
         </div>
         <div class="field">
@@ -424,7 +424,7 @@
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <h3 id="modal-title">Editar usuário</h3>
-    <div class="field"><label for="modal-usuario">Usuário</label><input type="text" id="modal-usuario" placeholder="nome.sobrenome"/></div>
+    <div class="field"><label for="modal-usuario" id="modal-usuario-label">E-mail (será o usuário de acesso)</label><input type="text" id="modal-usuario" placeholder="nome@mcpack.com.br" autocapitalize="none" spellcheck="false"/></div>
     <div class="field"><label for="modal-senha">Senha (deixe em branco para não alterar)</label><input type="password" id="modal-senha" placeholder="nova senha"/></div>
     <div class="field">
       <label>Páginas liberadas</label>
@@ -1454,6 +1454,8 @@ async function toggleAtivo(username, checkbox) {
 async function abrirModalAdd() {
   editingUser = null;
   document.getElementById("modal-title").textContent = "Novo usuário";
+  document.getElementById("modal-usuario-label").textContent = "E-mail (será o usuário de acesso)";
+  document.getElementById("modal-usuario").placeholder = "nome@mcpack.com.br";
   document.getElementById("modal-usuario").value = "";
   document.getElementById("modal-usuario").disabled = false;
   document.getElementById("modal-senha").value = "";
@@ -1463,6 +1465,7 @@ async function abrirModalAdd() {
 async function abrirModalEdit(id, username) {
   editingUser = { id, username };
   document.getElementById("modal-title").textContent = "Editar: " + username;
+  document.getElementById("modal-usuario-label").textContent = "Usuário";
   document.getElementById("modal-usuario").value = username;
   document.getElementById("modal-usuario").disabled = true;
   document.getElementById("modal-senha").value = "";
@@ -1504,7 +1507,8 @@ async function salvarUsuario() {
   const u = document.getElementById("modal-usuario").value.trim().toLowerCase();
   const s = document.getElementById("modal-senha").value.trim();
   const checks = [...document.querySelectorAll("#pages-checkboxes input:checked")].map(c => c.value);
-  if (!u) { alert("Preencha o usuário!"); return; }
+  if (!u) { alert(editingUser ? "Preencha o usuário!" : "Preencha o e-mail do usuário!"); return; }
+  if (!editingUser && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u)) { alert("Para novos usuários, use o e-mail corporativo, por exemplo nome@mcpack.com.br."); return; }
   if (!editingUser && !s) { alert("Preencha a senha para novo usuário!"); return; }
   const btn = document.querySelector(".btn-save");
   btn.textContent = "Salvando..."; btn.disabled = true;
