@@ -99,7 +99,7 @@
   .user-badge { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:3px 14px 3px 3px; min-height:40px; font-size:13px; }
   .avatar { width:32px; height:32px; border-radius:50%; background:#fff; color:#144387; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
   .user-badge strong { font-weight:600; color:#fff; }
-  .btn-top { border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.14); color:#fff; border-radius:999px; padding:0 16px; min-height:40px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+  .btn-top { display:inline-flex; align-items:center; justify-content:center; line-height:1; white-space:nowrap; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.14); color:#fff; border-radius:999px; padding:0 16px; min-height:40px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
   .btn-top:hover { background:rgba(255,255,255,.24); }
   .btn-top.on { background:#fff; color:#144387; border-color:#fff; }
   .btn-logout { width:40px; height:40px; border-radius:50%; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.14); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; }
@@ -123,7 +123,7 @@
   #report-iframe { width:100%; height:100%; border:none; display:block; }
 
   /* ===== ADMIN ===== */
-  #hub-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--page-bg); }
+  #hub-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; padding:10px 14px 12px; gap:10px; background:var(--page-bg); }
   .hubwrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:24px; overflow:auto; }
   .hubgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; width:100%; max-width:1000px; }
   .hubcard { text-align:left; background:var(--white); border:1px solid var(--border); border-top:4px solid var(--navy); border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:10px; box-shadow:var(--card-shadow); color:var(--text); cursor:pointer; min-height:210px; font-family:inherit; transition:transform .15s, border-color .15s; }
@@ -132,8 +132,8 @@
   .hubcard h3 { font-size:18px; font-weight:700; color:var(--head); margin:0; }
   .hubcard p { font-size:13px; color:var(--muted); margin:0; }
   .hubgo { margin-top:auto; font-weight:700; font-size:13px; color:var(--navy); }
-  #rh-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--page-bg); }
-  .rh-body { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:14px; }
+  #rh-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; padding:10px 14px 12px; gap:10px; background:var(--page-bg); }
+  .rh-body { flex:1; overflow:auto; padding:4px 0 0; display:flex; flex-direction:column; gap:14px; }
   .rh-filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px; }
   .rh-filtros label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
   .rh-filtros input, .rh-filtros select { height:40px; border:1px solid var(--input-bd); border-radius:10px; padding:0 12px; background:var(--white); color:var(--text); font-size:13px; font-family:inherit; }
@@ -277,14 +277,7 @@
       <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
       <span class="topbar-label">Portal BI</span>
     </div>
-    <div class="search-wrap">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-        <label for="nav-search" style="position:absolute;left:-9999px">Buscar painel</label>
-        <input type="text" id="nav-search" placeholder="Buscar painel…" autocomplete="off">
-        <kbd>Ctrl K</kbd>
-      </div>
-    </div>
+    <div class="search-wrap"></div>
     <div class="topbar-right">
       <button type="button" id="btn-hub-portal" class="btn-top" style="display:none" onclick="mostrarHub()">Início</button>
       <div id="admin-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
@@ -498,9 +491,8 @@ function iniciarPortal(paginaInicial) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("display-user").textContent = currentUser;
   document.getElementById("user-avatar").textContent = (currentUser || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("");
-  document.getElementById("nav-search").value = "";
   const adminBtns = document.getElementById("admin-mode-btns");
-  if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
+  if (adminBtns) adminBtns.style.display = "none";
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
   // Abas em ordem alfabética (só na exibição; a página inicial padrão continua sendo a primeira da lista original)
@@ -543,24 +535,6 @@ function atualizarSetas() {
 }
 document.getElementById("nav-bar").addEventListener("scroll", atualizarSetas);
 window.addEventListener("resize", atualizarSetas);
-function filtrarAbas(q) {
-  q = q.trim().toLowerCase();
-  document.querySelectorAll(".nav-tab").forEach(b => { b.style.display = !q || b.textContent.toLowerCase().includes(q) ? "" : "none"; });
-  atualizarSetas();
-}
-const navSearch = document.getElementById("nav-search");
-navSearch.addEventListener("input", () => filtrarAbas(navSearch.value));
-navSearch.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    const primeira = [...document.querySelectorAll(".nav-tab")].find(b => b.style.display !== "none");
-    if (primeira) { abrirPagina(primeira.dataset.id); navSearch.value = ""; filtrarAbas(""); navSearch.blur(); }
-  } else if (e.key === "Escape") { navSearch.value = ""; filtrarAbas(""); navSearch.blur(); }
-});
-document.addEventListener("keydown", e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && document.getElementById("portal-screen").style.display === "flex") {
-    e.preventDefault(); navSearch.focus(); navSearch.select();
-  }
-});
 function isAdmin() {
   if (!currentToken) return false;
   try {
@@ -645,6 +619,7 @@ function entradasDisponiveis() {
   if (rhAreas.includes("colaborador")) e.push("colab");
   if (rhAreas.some(a => a.startsWith("rh_"))) e.push("rh");
   if (currentPages.length) e.push("dash");
+  if (isAdmin()) e.push("admin");
   return e;
 }
 function esconderTelas() {
@@ -680,6 +655,7 @@ function mostrarHub() {
   const defs = {
     colab: { t: "Portal do Colaborador", d: "Holerites, documentos e dados cadastrais.", svg: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>', fn: "irParaRH('colab')" },
     rh: { t: "Área do RH", d: "Cadastro de pessoas, documentos e consolidado.", svg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>', fn: "irParaRH('rh')" },
+    admin: { t: "Administração", d: "Usuários, acessos e páginas liberadas.", svg: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>', fn: "irParaAdmin()" },
     dash: { t: "Dashboards", d: "Indicadores comerciais, financeiros e de operação.", svg: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', fn: "entrarDashboards()" }
   };
   document.getElementById("hub-cards").innerHTML = entradasDisponiveis().map(k => {
@@ -786,7 +762,7 @@ async function irParaAdmin() {
   document.getElementById("btn-dashboards").classList.remove("on");
   await renderAdminTable();
 }
-function adminLogout() { irParaDashboards(); }
+function adminLogout() { if (entradasDisponiveis().length >= 2) mostrarHub(); else irParaDashboards(); }
 async function renderAdminTable() {
   const tbody = document.getElementById("users-tbody");
   tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;color:var(--muted);padding:20px'>Carregando...</td></tr>";
