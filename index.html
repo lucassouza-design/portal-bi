@@ -123,6 +123,15 @@
   #report-iframe { width:100%; height:100%; border:none; display:block; }
 
   /* ===== ADMIN ===== */
+  #hub-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--page-bg); }
+  .hubwrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:24px; overflow:auto; }
+  .hubgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; width:100%; max-width:1000px; }
+  .hubcard { text-align:left; background:var(--white); border:1px solid var(--border); border-top:4px solid var(--navy); border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:10px; box-shadow:var(--card-shadow); color:var(--text); cursor:pointer; min-height:210px; font-family:inherit; transition:transform .15s, border-color .15s; }
+  .hubcard:hover { border-color:var(--navy); transform:translateY(-2px); }
+  .hubic { width:54px; height:54px; border-radius:14px; background:var(--bg2); color:var(--navy); display:grid; place-items:center; }
+  .hubcard h3 { font-size:18px; font-weight:700; color:var(--head); margin:0; }
+  .hubcard p { font-size:13px; color:var(--muted); margin:0; }
+  .hubgo { margin-top:auto; font-weight:700; font-size:13px; color:var(--navy); }
   #rh-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--page-bg); }
   .rh-body { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:14px; }
   .rh-filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px; }
@@ -277,9 +286,7 @@
       </div>
     </div>
     <div class="topbar-right">
-      <div id="rh-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
-        <button id="btn-rh" class="btn-top" onclick="irParaRH()">RH</button>
-      </div>
+      <button type="button" id="btn-hub-portal" class="btn-top" style="display:none" onclick="mostrarHub()">Início</button>
       <div id="admin-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
         <button id="btn-dashboards" class="btn-top on" onclick="irParaDashboards()">Dashboards</button>
         <button id="btn-admin-portal" class="btn-top" onclick="irParaAdmin()">Admin</button>
@@ -304,15 +311,37 @@
     </div>
   </div>
 </div>
+<!-- HUB -->
+<div id="hub-screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
+      <span class="topbar-label">Portal MCPack</span>
+    </div>
+    <div class="topbar-right">
+      <button type="button" class="btn-top" onclick="alternarTema()">Claro / Escuro</button>
+      <div class="user-badge"><span class="avatar" id="hub-avatar"></span><strong id="hub-user"></strong></div>
+      <button type="button" class="btn-logout" aria-label="Sair" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg></button>
+    </div>
+  </header>
+  <div class="hubwrap">
+    <div style="text-align:center">
+      <div class="login-greeting" id="hub-greeting"></div>
+      <h1 style="font-size:28px;font-weight:800;color:var(--head);margin:0 0 6px" id="hub-title"></h1>
+      <p style="color:var(--muted);font-size:14px;margin:0">Para onde você quer ir?</p>
+    </div>
+    <div class="hubgrid" id="hub-cards"></div>
+  </div>
+</div>
 <!-- RH -->
 <div id="rh-screen">
   <header class="topbar">
     <div class="topbar-left">
       <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <span class="topbar-label">Portal do Colaborador · RH</span>
+      <span class="topbar-label" id="rh-label">Portal do Colaborador</span>
     </div>
     <div class="topbar-right">
-      <button type="button" class="btn-top" onclick="irParaDashboards()">Voltar ao Portal</button>
+      <button type="button" class="btn-top" id="btn-rh-voltar" onclick="rhVoltar()">Voltar ao Portal</button>
     </div>
   </header>
   <div class="nav-wrap"><div class="nav-bar" id="rh-nav"></div></div>
@@ -467,13 +496,11 @@ async function carregarSessao() {
 // ── Portal ──
 function iniciarPortal(paginaInicial) {
   document.getElementById("login-screen").style.display = "none";
-  document.getElementById("portal-screen").style.display = "flex";
   document.getElementById("display-user").textContent = currentUser;
   document.getElementById("user-avatar").textContent = (currentUser || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("");
   document.getElementById("nav-search").value = "";
   const adminBtns = document.getElementById("admin-mode-btns");
   if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
-  rhDetectar();
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
   // Abas em ordem alfabética (só na exibição; a página inicial padrão continua sendo a primeira da lista original)
@@ -489,8 +516,7 @@ function iniciarPortal(paginaInicial) {
   const target = paginaInicial && currentPages.find(p => p.key === paginaInicial)
     ? paginaInicial
     : (currentPages[0] ? currentPages[0].key : null);
-  if (target) abrirPagina(target);
-  atualizarSetas();
+  rhDetectar().then(() => decidirEntrada(target));
 }
 // ── Abas: setas, busca e atalho Ctrl+K ──
 function rolarAbas(dir) {
@@ -574,7 +600,8 @@ function doLogout() {
   document.getElementById("report-iframe").src = "";
   document.getElementById("portal-screen").style.display = "none";
   document.getElementById("admin-screen").style.display = "none";
-  document.getElementById("rh-screen").style.display = "none";
+  esconderTelas();
+  rhAreas = []; rhNome = null; hubTarget = null;
   document.getElementById("login-screen").style.display = "flex";
   const savedUser = localStorage.getItem("mcpack_remember_user");
   document.getElementById("input-user").value = savedUser || "";
@@ -595,32 +622,91 @@ async function rhCall(action, extra) {
   if (!resp.ok || !data.ok) throw new Error(data.error || "Erro");
   return data;
 }
+let rhNome = null;
+let hubTarget = null;
 async function rhDetectar() {
-  rhAreas = [];
-  const box = document.getElementById("rh-mode-btns");
-  if (box) box.style.display = "none";
+  rhAreas = []; rhNome = null;
   try {
     const d = await rhCall("me");
     rhAreas = d.areas || [];
+    rhNome = d.nome || null;
   } catch (e) { rhAreas = []; }
-  if (box && rhAreas.length) box.style.display = "flex";
 }
 const RH_ABAS = [
-  { key: "meus", label: "Meus documentos", area: "colaborador" },
-  { key: "pessoas", label: "Pessoas", area: "rh_pessoas" },
-  { key: "docs", label: "Documentos", area: "rh_documentos" },
-  { key: "consolidado", label: "Consolidado", area: "rh_consolidado" }
+  { key: "meus", label: "Meus documentos", area: "colaborador", modo: "colab" },
+  { key: "dados", label: "Meus dados", area: "colaborador", modo: "colab" },
+  { key: "pessoas", label: "Pessoas", area: "rh_pessoas", modo: "rh" },
+  { key: "docs", label: "Documentos", area: "rh_documentos", modo: "rh" },
+  { key: "consolidado", label: "Consolidado", area: "rh_consolidado", modo: "rh" }
 ];
+// ── Tela de escolha (hub) ──
+function entradasDisponiveis() {
+  const e = [];
+  if (rhAreas.includes("colaborador")) e.push("colab");
+  if (rhAreas.some(a => a.startsWith("rh_"))) e.push("rh");
+  if (currentPages.length) e.push("dash");
+  return e;
+}
+function esconderTelas() {
+  ["login-screen", "portal-screen", "admin-screen", "rh-screen", "hub-screen"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = "none"; });
+}
+function decidirEntrada(target) {
+  hubTarget = target;
+  const ent = entradasDisponiveis();
+  const hubOn = ent.length >= 2;
+  const bp = document.getElementById("btn-hub-portal");
+  if (bp) bp.style.display = hubOn ? "inline-flex" : "none";
+  if (hubOn) return mostrarHub();
+  if (ent[0] === "colab") return irParaRH("colab");
+  if (ent[0] === "rh") return irParaRH("rh");
+  entrarDashboards();
+}
+function entrarDashboards() {
+  esconderTelas();
+  document.getElementById("portal-screen").style.display = "flex";
+  const t = hubTarget && currentPages.find(p => p.key === hubTarget) ? hubTarget : (currentPages[0] ? currentPages[0].key : null);
+  const ifr = document.getElementById("report-iframe");
+  if (t && !ifr.getAttribute("src")) abrirPagina(t);
+  atualizarSetas();
+}
+function mostrarHub() {
+  esconderTelas();
+  const h = new Date().getHours();
+  document.getElementById("hub-greeting").textContent = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  const nomeCurto = rhNome ? rhNome.split(" ")[0] : currentUser;
+  document.getElementById("hub-title").textContent = "Olá, " + nomeCurto;
+  document.getElementById("hub-user").textContent = currentUser;
+  document.getElementById("hub-avatar").textContent = (currentUser || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("");
+  const defs = {
+    colab: { t: "Portal do Colaborador", d: "Holerites, documentos e dados cadastrais.", svg: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>', fn: "irParaRH('colab')" },
+    rh: { t: "Área do RH", d: "Cadastro de pessoas, documentos e consolidado.", svg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>', fn: "irParaRH('rh')" },
+    dash: { t: "Dashboards", d: "Indicadores comerciais, financeiros e de operação.", svg: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', fn: "entrarDashboards()" }
+  };
+  document.getElementById("hub-cards").innerHTML = entradasDisponiveis().map(k => {
+    const d = defs[k];
+    return '<button class="hubcard" onclick="' + d.fn + '"><span class="hubic"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' + d.svg + '</svg></span><h3>' + d.t + '</h3><p>' + d.d + '</p><span class="hubgo">Abrir →</span></button>';
+  }).join("");
+  document.getElementById("hub-screen").style.display = "flex";
+}
+function rhVoltar() {
+  if (entradasDisponiveis().length >= 2) return mostrarHub();
+  if (currentPages.length) return entrarDashboards();
+}
 function rhFmtData(v) { if (!v) return "—"; const d = new Date(v.length === 10 ? v + "T00:00:00" : v); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR"); }
 function rhTipoLabel(k) { const t = rhTipos.find(x => x.key === k); return t ? t.label : k; }
-async function irParaRH() {
-  document.getElementById("portal-screen").style.display = "none";
-  document.getElementById("admin-screen").style.display = "none";
+async function irParaRH(modo) {
+  esconderTelas();
   document.getElementById("rh-screen").style.display = "flex";
+  document.getElementById("rh-label").textContent = modo === "rh" ? "Portal do Colaborador · RH" : "Portal do Colaborador";
+  const vb = document.getElementById("btn-rh-voltar");
+  const ent = entradasDisponiveis();
+  if (ent.length >= 2) { vb.style.display = "inline-flex"; vb.textContent = "Início"; }
+  else if (currentPages.length) { vb.style.display = "inline-flex"; vb.textContent = "Voltar ao Portal"; }
+  else vb.style.display = "none";
   if (!rhTipos.length) { try { rhTipos = (await rhCall("tipos")).tipos; } catch (e) {} }
   const nav = document.getElementById("rh-nav");
   nav.innerHTML = "";
-  const abas = RH_ABAS.filter(a => rhAreas.includes(a.area));
+  const abas = RH_ABAS.filter(a => a.modo === modo && rhAreas.includes(a.area));
   abas.forEach(a => {
     const b = document.createElement("button");
     b.className = "nav-tab"; b.textContent = a.label; b.dataset.id = a.key;
@@ -633,7 +719,7 @@ function rhAbrirAba(key) {
   document.querySelectorAll("#rh-nav .nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === key));
   const c = document.getElementById("rh-content");
   c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
-  const fn = { meus: rhRenderMeus, pessoas: rhRenderPessoas, docs: rhRenderDocs, consolidado: rhRenderConsolidado }[key];
+  const fn = { meus: rhRenderMeus, dados: rhRenderDados, pessoas: rhRenderPessoas, docs: rhRenderDocs, consolidado: rhRenderConsolidado }[key];
   fn(c).catch(e => { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; });
 }
 async function rhAbrirDoc(id) {
@@ -649,6 +735,12 @@ async function rhRenderMeus(c) {
   c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus documentos</div>' + (linhas
     ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th><th>Tipo</th><th>Publicado em</th><th>Status</th><th>Ação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
     : '<div class="rh-vazio">Nenhum documento publicado ainda.</div>') + '</div>';
+}
+async function rhRenderDados(c) {
+  const { dados } = await rhCall("meus_dados");
+  if (!dados) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">Seu cadastro ainda não foi encontrado.</div></div>'; return; }
+  const campos = [["Nome", dados.name], ["Matrícula", dados.matricula], ["Departamento", dados.department_name], ["Cargo", dados.cargo_oficial || dados.job_title], ["Gestor", dados.gestor_nome], ["Admissão", dados.data_admissao ? rhFmtData(dados.data_admissao) : null], ["E-mail corporativo", dados.work_email], ["Telefone", dados.telefone_trabalho || dados.celular]];
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus dados</div><div class="table-scroll"><table class="admin-table"><tbody>' + campos.map(x => '<tr><td style="width:220px;color:var(--muted);font-weight:600">' + x[0] + '</td><td>' + esc(x[1] || "—") + '</td></tr>').join("") + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH.</p></div>';
 }
 async function rhRenderPessoas(c) {
   const { pessoas } = await rhCall("pessoas_list");
@@ -681,16 +773,14 @@ async function rhCarregarConsolidado() {
 }
 // ── Admin ──
 function irParaDashboards() {
-  document.getElementById("rh-screen").style.display = "none";
-  document.getElementById("admin-screen").style.display = "none";
+  esconderTelas();
   document.getElementById("portal-screen").style.display = "flex";
   document.getElementById("btn-dashboards").classList.add("on");
   document.getElementById("btn-admin-portal").classList.remove("on");
   atualizarSetas();
 }
 async function irParaAdmin() {
-  document.getElementById("rh-screen").style.display = "none";
-  document.getElementById("portal-screen").style.display = "none";
+  esconderTelas();
   document.getElementById("admin-screen").style.display = "flex";
   document.getElementById("btn-admin-portal").classList.add("on");
   document.getElementById("btn-dashboards").classList.remove("on");
