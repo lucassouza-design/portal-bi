@@ -125,6 +125,8 @@
   .chip { display:inline-flex; flex-direction:column; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:5px 12px; font-size:13px; font-weight:600; color:var(--text); }
   .chip small { font-size:10px; font-weight:500; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .rh-sw-l { display:inline-flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; }
+  .modal .rh-sw-l { display:inline-flex; margin:0; }
+  .modal .rh-sw input { padding:0; }
   .rh-sw { position:relative; width:44px; height:24px; flex:0 0 44px; }
   .rh-sw input { position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1; width:100%; height:100%; }
   .rh-sw i { position:absolute; inset:0; border-radius:999px; background:var(--input-bd); transition:background .2s; }
@@ -976,9 +978,9 @@ function rhModalAbrir(titulo, corpo, okTxt, okFn) {
   document.body.appendChild(o);
   document.getElementById("rh-modal-ok").onclick = async () => {
     const b = document.getElementById("rh-modal-ok"), er = document.getElementById("rh-modal-err");
-    b.disabled = true; er.style.display = "none";
+    b.disabled = true; er.style.display = "none"; const t0 = b.textContent; b.textContent = "Salvando…";
     try { await okFn(); rhModalFechar(); }
-    catch (e) { er.textContent = e.message || String(e); er.style.display = "block"; b.disabled = false; }
+    catch (e) { er.textContent = e.message || String(e); er.style.display = "block"; b.disabled = false; b.textContent = t0; }
   };
   const f = o.querySelector("input,select"); if (f) f.focus();
 }
@@ -995,11 +997,10 @@ function rhModalEditar(ligar) {
   const mot = '<option value="">— sem motivo —</option>' + p.motivos.map(m => '<option value="' + esc(m.id) + '">' + esc(m.label || m.name) + '</option>').join("");
   const hoje = new Date().toISOString().slice(0, 10);
   rhModalAbrir("Editar " + d.name,
-    '<div class="field"><label class="rh-sw-l"><span class="rh-sw"><input type="checkbox" id="rhe-ativo"' + (alvo ? " checked" : "") + ' onchange="rhModalSituacao()"><i></i></span><b id="rhe-ativo-t"></b></label></div>' +
+    '<div style="margin:0 0 18px"><label class="rh-sw-l"><span class="rh-sw"><input type="checkbox" id="rhe-ativo"' + (alvo ? " checked" : "") + ' onchange="rhModalSituacao()"><i></i></span><b id="rhe-ativo-t"></b></label></div>' +
     '<div id="rhe-saida" style="display:none"><div class="field"><label for="rhe-dsaida">Data de desligamento *</label><input type="date" id="rhe-dsaida" value="' + esc(d.data_saida || hoje) + '"/></div>' +
     '<div class="field"><label for="rhe-mot">Motivo</label><select id="rhe-mot" style="width:100%;min-height:44px;border:1.5px solid var(--input-bd);border-radius:12px;padding:0 12px;font:inherit">' + mot + '</select></div>' +
     '<p style="font-size:12px;color:var(--muted)">Ao salvar, o funcionário é arquivado no Odoo e o acesso ao portal é cortado. Histórico e documentos são mantidos.</p></div>' +
-    '<div id="rhe-volta" style="display:none">' + (d.portal ? '<div class="field"><label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="rhe-acesso" checked style="width:auto"> Reativar também o acesso ao portal (' + esc(d.portal.username) + ')</label></div>' : '') + '</div>' +
     '<div id="rhe-campos">' + f("rhe-mail", "E-mail corporativo", d.work_email, "nome@mcpack.com.br", "email") +
     f("rhe-tel", "Telefone de trabalho", d.telefone_trabalho) + f("rhe-cel", "Celular", d.celular) +
     f("rhe-cargo", "Cargo", d.job_title || d.cargo_oficial) + f("rhe-mat", "Matrícula", d.matricula) +
@@ -1010,16 +1011,18 @@ function rhModalEditar(ligar) {
       let dt = null;
       if (eraAtivo && !liga) { dt = v("rhe-dsaida"); if (!dt) throw new Error("Informe a data de desligamento."); }
       const campos = { work_email: v("rhe-mail"), telefone_trabalho: v("rhe-tel"), celular: v("rhe-cel"), job_title: v("rhe-cargo"), matricula: v("rhe-mat"), aniversario: v("rhe-aniv"), data_admissao: v("rhe-adm") };
-      const r = await rhCall("pessoa_editar", { id: p.id, campos });
-      if (r.dados) p.dados = r.dados;
+      const orig = { work_email: d.work_email, telefone_trabalho: d.telefone_trabalho, celular: d.celular, job_title: d.job_title || d.cargo_oficial, matricula: d.matricula, aniversario: d.aniversario, data_admissao: d.data_admissao };
+      if (Object.keys(campos).some(k => (campos[k] || "") !== (orig[k] || ""))) {
+        const r = await rhCall("pessoa_editar", { id: p.id, campos });
+        if (r.dados) p.dados = r.dados;
+      }
       if (eraAtivo && !liga) {
         const ex = { id: p.id, ativo: false, data_saida: dt }, m = v("rhe-mot");
         if (m) ex.motivo = isNaN(+m) ? m : +m;
         await rhCall("pessoa_status", ex);
       } else if (!eraAtivo && liga) {
         await rhCall("pessoa_status", { id: p.id, ativo: true });
-        const ac = document.getElementById("rhe-acesso");
-        if (ac && ac.checked) await rhCall("pessoa_acesso", { id: p.id, ativo: true });
+        if (d.portal) await rhCall("pessoa_acesso", { id: p.id, ativo: true });
       }
       await rhRecarregarPessoa();
     });
@@ -1029,7 +1032,6 @@ function rhModalSituacao() {
   const era = rhPessoaAtual.eraAtivo, liga = document.getElementById("rhe-ativo").checked;
   document.getElementById("rhe-ativo-t").textContent = liga ? "Funcionário ativo" : "Funcionário inativo";
   document.getElementById("rhe-saida").style.display = era && !liga ? "block" : "none";
-  document.getElementById("rhe-volta").style.display = !era && liga ? "block" : "none";
 }
 async function rhTrocarFotoCard(inp) {
   const msg = document.getElementById("rh-foto-msg"), p = rhPessoaAtual;
