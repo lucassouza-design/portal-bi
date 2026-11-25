@@ -881,7 +881,7 @@ function rhPerfilHtml(d, opt) {
   const chip = (k, v) => v ? '<span class="chip"><small>' + k + '</small>' + esc(v) + '</span>' : "";
   const status = opt.editar
     ? '<label class="rh-sw-l" title="Clique para ' + (ativo ? "inativar" : "reativar") + '"><span class="rh-sw"><input type="checkbox" ' + (ativo ? "checked " : "") + 'onclick="event.preventDefault();rhModalEditar(' + (!ativo) + ')" aria-label="Situação do funcionário"><i></i></span><b>' + (ativo ? "Ativo" : "Inativo") + '</b></label>'
-    : (ativo ? '<span class="pill ok">Ativo</span>' : '<span class="pill">Arquivado</span>');
+    : (ativo ? '<span class="pill ok">Ativo</span>' : '<span class="pill">Inativo</span>');
   return '<div class="admin-card"><div class="perfil"><div class="avatar-lg" id="rh-avatar-lg">' + esc(iniciaisDe(d.name)) + '</div><div style="min-width:0;flex:1"><h2>' + esc(d.name) + '</h2><div class="chips">' + chip("Cargo", d.cargo_oficial || d.job_title) + chip("Departamento", d.department_name) + chip("Gestor", d.gestor_nome) + chip("Matrícula", d.matricula) + '</div><div style="margin-top:10px">' + status + '</div></div><div style="margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end">' +
     (opt.editar ? '<button type="button" class="btn-save" style="min-height:38px" onclick="rhModalEditar()">Editar dados</button>' : '') +
     '<label class="btn-edit" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">' + svgIcone("cam").replace("<svg ", '<svg width="16" height="16" ') + 'Trocar foto<input type="file" accept="image/*" hidden onchange="' + opt.fotoFn + '"></label><div id="rh-foto-msg" style="font-size:12px;color:var(--muted);max-width:260px"></div></div></div></div>' +
@@ -917,7 +917,7 @@ function rhDesenharPessoas(c) {
   const lista = todas.filter(p => f === "todos" || (f === "ativos" ? p.active : !p.active));
   const semMat = todas.filter(p => !p.matricula && p.active).length, nAtivos = todas.filter(p => p.active).length;
   const opt = (v, t) => '<option value="' + v + '"' + (f === v ? " selected" : "") + '>' + t + '</option>';
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select aria-label="Filtrar por situação" class="pes-filtro" onchange="rhPessoasFiltro=this.value;rhDesenharPessoas()">' + opt("ativos", "Ativos") + opt("arquivados", "Arquivados") + opt("todos", "Todos") + '</select><span class="badge-page">' + nAtivos + ' ativos · ' + semMat + ' sem matrícula</span></span></div><div id="rh-pes-tb"></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Clique em uma pessoa para abrir o cadastro dela. Somente leitura por enquanto, exceto a foto.</p></div>';
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select aria-label="Filtrar por situação" class="pes-filtro" onchange="rhPessoasFiltro=this.value;rhDesenharPessoas()">' + opt("ativos", "Ativos") + opt("arquivados", "Inativos") + opt("todos", "Todos") + '</select><span class="badge-page">' + nAtivos + ' ativos · ' + semMat + ' sem matrícula</span></span></div><div id="rh-pes-tb"></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Clique em uma pessoa para abrir o cadastro dela. Somente leitura por enquanto, exceto a foto.</p></div>';
   const portalTxt = p => p.portal ? p.portal.username + (p.portal.ativo ? "" : " · inativo") : "sem acesso";
   rhTbMount(document.getElementById("rh-pes-tb"), {
     nome: "pessoas", rows: lista,
@@ -927,9 +927,9 @@ function rhDesenharPessoas(c) {
       { label: "Nome", get: p => p.name, html: p => '<div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span></div>' },
       { label: "Departamento", get: p => p.department_name || "" },
       { label: "Aniversário", get: p => p.aniversario || "", sortv: p => p.aniversario ? p.aniversario.split("/").reverse().join("") : "" },
-      { label: "Admissão", get: p => p.data_admissao ? rhFmtData(p.data_admissao) : "", sortv: p => p.data_admissao || "",
-        html: p => rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") , csv: p => (p.data_admissao ? rhFmtData(p.data_admissao) : "") + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") },
-      { label: "Status", get: p => p.active ? "Ativo" : "Arquivado", html: p => '<span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span>' },
+      { label: "Admissão", get: p => p.data_admissao ? rhFmtData(p.data_admissao) : "", sortv: p => p.data_admissao || "", html: p => p.data_admissao ? rhFmtData(p.data_admissao) : "—" },
+      { label: "Demissão", get: p => p.data_saida ? rhFmtData(p.data_saida) : "", sortv: p => p.data_saida || "", html: p => p.data_saida ? rhFmtData(p.data_saida) : "—" },
+      { label: "Status", get: p => p.active ? "Ativo" : "Inativo", html: p => '<span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Inativo") + '</span>' },
       { label: "Portal", get: portalTxt, html: p => p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>' }
     ]
   });
