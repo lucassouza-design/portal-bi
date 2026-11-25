@@ -921,7 +921,7 @@ async function rhAbrirPessoa(id) {
   c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
   try {
     const r = await rhCall("pessoa_get", { id });
-    rhPessoaAtual = { id, dados: r.dados, documentos: r.documentos, aba: "holerite" };
+    rhPessoaAtual = { id, dados: r.dados, documentos: r.documentos, aba: "holerite", pode_editar: !!r.pode_editar, motivos: r.motivos || [] };
     rhDesenharPessoa();
   } catch (e) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; }
 }
@@ -941,10 +941,91 @@ function rhBlocosMontar() { const el = document.getElementById("rh-bloco-tb"); i
 function rhDesenharPessoa() {
   const p = rhPessoaAtual, c = document.getElementById("rh-content");
   c.innerHTML = '<div style="margin:0 0 10px"><button type="button" class="btn-edit" onclick="rhAbrirAba(\'pessoas\')">← Voltar para Pessoas</button></div>' +
+    rhAcoesPessoaHtml(p) +
     rhPerfilHtml(p.dados, { rh: true, fotoFn: "rhTrocarFotoCard(this)" }) +
     (p.documentos ? rhBlocosDocs(p.documentos, p.aba, "rhPessoaAtual.aba='%K';rhDesenharPessoa()", true, p.dados.name) : '<div class="admin-card" style="margin-top:14px"><div class="rh-vazio">Você não tem permissão para ver os documentos desta pessoa.</div></div>');
   aplicarFoto(document.getElementById("rh-avatar-lg"), p.dados.foto_url);
   rhBlocosMontar();
+}
+// ── ADM do RH: editar dados, inativar/reativar funcionário e ativar/desativar acesso ──
+function rhAcoesPessoaHtml(p) {
+  if (!p.pode_editar) return "";
+  const d = p.dados, ativo = d.active !== false;
+  return '<div class="rh-acoes" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px">' +
+    '<button type="button" class="btn-save" style="min-height:38px" onclick="rhModalEditar()">Editar dados</button>' +
+    (ativo ? '<button type="button" class="btn-edit" onclick="rhModalInativar()">Inativar funcionário</button>' : '<button type="button" class="btn-edit" onclick="rhModalReativar()">Reativar funcionário</button>') +
+    (d.portal ? '<button type="button" class="btn-edit" onclick="rhModalAcesso()">' + (d.portal.ativo ? "Desativar acesso ao portal" : "Ativar acesso ao portal") + '</button>' : '') +
+    '</div>';
+}
+function rhModalAbrir(titulo, corpo, okTxt, okFn) {
+  rhModalFechar();
+  const o = document.createElement("div");
+  o.className = "modal-overlay active"; o.id = "rh-modal";
+  o.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="rh-modal-t"><h3 id="rh-modal-t">' + esc(titulo) + '</h3>' + corpo +
+    '<div id="rh-modal-err" role="alert" style="color:var(--danger);font-size:13px;margin-top:10px;display:none"></div>' +
+    '<div class="modal-footer"><button type="button" class="btn-cancel" onclick="rhModalFechar()">Cancelar</button><button type="button" class="btn-save" id="rh-modal-ok">' + esc(okTxt) + '</button></div></div>';
+  o.addEventListener("mousedown", e => { if (e.target === o) rhModalFechar(); });
+  document.body.appendChild(o);
+  document.getElementById("rh-modal-ok").onclick = async () => {
+    const b = document.getElementById("rh-modal-ok"), er = document.getElementById("rh-modal-err");
+    b.disabled = true; er.style.display = "none";
+    try { await okFn(); rhModalFechar(); }
+    catch (e) { er.textContent = e.message || String(e); er.style.display = "block"; b.disabled = false; }
+  };
+  const f = o.querySelector("input,select"); if (f) f.focus();
+}
+function rhModalFechar() { const o = document.getElementById("rh-modal"); if (o) o.remove(); }
+async function rhRecarregarPessoa() {
+  const p = rhPessoaAtual, r = await rhCall("pessoa_get", { id: p.id });
+  p.dados = r.dados; p.documentos = r.documentos; p.pode_editar = !!r.pode_editar; p.motivos = r.motivos || [];
+  rhPessoasCache = null;
+  rhDesenharPessoa();
+}
+function rhModalEditar() {
+  const d = rhPessoaAtual.dados;
+  const f = (id, lb, v, ph, tp) => '<div class="field"><label for="' + id + '">' + lb + '</label><input type="' + (tp || "text") + '" id="' + id + '" value="' + esc(v || "") + '" placeholder="' + (ph || "") + '"/></div>';
+  rhModalAbrir("Editar " + d.name,
+    f("rhe-mail", "E-mail corporativo", d.work_email, "nome@mcpack.com.br", "email") +
+    f("rhe-tel", "Telefone de trabalho", d.telefone_trabalho) + f("rhe-cel", "Celular", d.celular) +
+    f("rhe-cargo", "Cargo", d.job_title || d.cargo_oficial) + f("rhe-mat", "Matrícula", d.matricula) +
+    f("rhe-aniv", "Aniversário (dd/mm)", d.aniversario, "ex.: 25/11") + f("rhe-adm", "Data de admissão", d.data_admissao, "", "date") +
+    '<p style="font-size:12px;color:var(--muted)">E-mail, telefone, celular, cargo e matrícula são gravados no Odoo. Aniversário e admissão ficam só no portal. Departamento e gestor ainda se alteram no Odoo.</p>',
+    "Salvar", async () => {
+      const v = id => document.getElementById(id).value.trim();
+      const campos = { work_email: v("rhe-mail"), telefone_trabalho: v("rhe-tel"), celular: v("rhe-cel"), job_title: v("rhe-cargo"), matricula: v("rhe-mat"), aniversario: v("rhe-aniv"), data_admissao: v("rhe-adm") };
+      const r = await rhCall("pessoa_editar", { id: rhPessoaAtual.id, campos });
+      if (r.dados) rhPessoaAtual.dados = r.dados;
+      rhPessoasCache = null;
+      rhDesenharPessoa();
+    });
+}
+function rhModalInativar() {
+  const p = rhPessoaAtual, hoje = new Date().toISOString().slice(0, 10);
+  const mot = '<option value="">— sem motivo —</option>' + p.motivos.map(m => '<option value="' + esc(m.id) + '">' + esc(m.label || m.name) + '</option>').join("");
+  rhModalAbrir("Inativar " + p.dados.name,
+    '<div class="field"><label for="rhi-data">Data de desligamento *</label><input type="date" id="rhi-data" value="' + hoje + '"/></div>' +
+    '<div class="field"><label for="rhi-mot">Motivo</label><select id="rhi-mot" style="width:100%;min-height:44px;border:1.5px solid var(--input-bd);border-radius:12px;padding:0 12px;font:inherit">' + mot + '</select></div>' +
+    '<p style="font-size:12px;color:var(--muted)">O funcionário será arquivado no Odoo e o acesso ao portal será desativado. O histórico e os documentos são mantidos.</p>',
+    "Inativar funcionário", async () => {
+      const data = document.getElementById("rhi-data").value, m = document.getElementById("rhi-mot").value;
+      if (!data) throw new Error("Informe a data de desligamento.");
+      const ex = { id: p.id, ativo: false, data_saida: data };
+      if (m) ex.motivo = isNaN(+m) ? m : +m;
+      await rhCall("pessoa_status", ex);
+      await rhRecarregarPessoa();
+    });
+}
+function rhModalReativar() {
+  const p = rhPessoaAtual;
+  rhModalAbrir("Reativar " + p.dados.name,
+    '<p style="font-size:14px">O funcionário volta a ficar ativo no Odoo e no portal de pessoas. O <b>acesso ao portal não é reativado</b> automaticamente: use "Ativar acesso ao portal" depois, se for o caso.</p>',
+    "Reativar funcionário", async () => { await rhCall("pessoa_status", { id: p.id, ativo: true }); await rhRecarregarPessoa(); });
+}
+function rhModalAcesso() {
+  const p = rhPessoaAtual, on = !p.dados.portal.ativo;
+  rhModalAbrir((on ? "Ativar" : "Desativar") + " acesso de " + p.dados.name,
+    '<p style="font-size:14px">' + (on ? "O usuário <b>" + esc(p.dados.portal.username) + "</b> voltará a conseguir entrar no portal com a senha atual." : "O usuário <b>" + esc(p.dados.portal.username) + "</b> não conseguirá mais entrar no portal. O cadastro e os documentos continuam.") + '</p>',
+    on ? "Ativar acesso" : "Desativar acesso", async () => { await rhCall("pessoa_acesso", { id: p.id, ativo: on }); await rhRecarregarPessoa(); });
 }
 async function rhTrocarFotoCard(inp) {
   const msg = document.getElementById("rh-foto-msg"), p = rhPessoaAtual;
