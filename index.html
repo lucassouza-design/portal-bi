@@ -127,6 +127,25 @@
   .tile .ti svg { width:18px; height:18px; }
   .tile small { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .tile b { font-size:13.5px; font-weight:600; color:var(--text); word-break:break-word; }
+  .tb-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .tb-q { flex:1 1 260px; max-width:420px; height:38px; border:1px solid var(--input-bd); border-radius:10px; padding:0 12px; background:var(--white); color:var(--text); font-size:13px; font-family:inherit; }
+  .tb-n { font-size:12px; color:var(--muted); }
+  .tb-sp { flex:1; }
+  .tb-limpar { border:0; background:none; color:var(--navy); font:inherit; font-weight:600; cursor:pointer; text-decoration:underline; padding:0; }
+  .tb-th { display:flex; align-items:center; gap:4px; }
+  .tb-sort { border:0; background:none; font:inherit; color:inherit; text-transform:inherit; letter-spacing:inherit; font-weight:inherit; cursor:pointer; padding:4px 0; display:inline-flex; align-items:center; gap:5px; text-align:left; }
+  .tb-seta { font-size:9px; opacity:.55; }
+  th[aria-sort="ascending"] .tb-seta, th[aria-sort="descending"] .tb-seta { opacity:1; color:var(--navy); }
+  .tb-f { border:0; background:none; color:var(--muted); cursor:pointer; width:26px; height:26px; border-radius:6px; display:inline-grid; place-items:center; }
+  .tb-f:hover, .tb-f:focus-visible { background:var(--tab-hover); color:var(--navy); }
+  .tb-f.on { background:var(--navy); color:#fff; }
+  .tb-chk { width:36px; }
+  #tb-pop { position:fixed; z-index:1000; width:260px; background:var(--white); border:1px solid var(--border); border-radius:12px; box-shadow:0 12px 32px rgba(10,25,60,.22); padding:10px; display:flex; flex-direction:column; gap:8px; }
+  #tb-pop input[type=search] { height:34px; border:1px solid var(--input-bd); border-radius:8px; padding:0 10px; font-size:13px; font-family:inherit; background:var(--white); color:var(--text); }
+  #tb-pop label { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); cursor:pointer; padding:3px 2px; }
+  #tb-pop .tb-all { border-bottom:1px solid var(--border); padding-bottom:6px; font-weight:600; }
+  #tb-pop .tb-list { max-height:220px; overflow:auto; }
+  #tb-pop .tb-pop-f { display:flex; justify-content:space-between; gap:8px; }
   .pes-row { cursor:pointer; }
   .pes-row:hover td { background:var(--tab-hover); }
   .pes-row:focus-visible { outline:2px solid var(--navy); outline-offset:-2px; }
@@ -136,6 +155,7 @@
   .rh-tab.on { color:var(--navy); border-bottom-color:var(--navy); }
   .rh-tab .n { display:inline-block; min-width:18px; padding:0 6px; border-radius:999px; background:var(--tab-hover); color:var(--navy); font-size:11px; text-align:center; }
   .pes-n { display:flex; align-items:center; gap:10px; }
+  .pes-n span:last-child { white-space:nowrap; }
   .pes-n .avatar { background:var(--navy); color:#fff; }
   .pes-n .avatar.foto { color:transparent; background-size:cover; background-position:center; }
   .lat-main { flex:1; min-width:0; height:100vh; display:flex; flex-direction:column; padding:12px 14px 12px 16px; gap:10px; overflow:hidden; }
@@ -787,10 +807,23 @@ async function rhAbrirDoc(id) {
 }
 async function rhRenderMeus(c) {
   const { documentos } = await rhCall("meus_documentos");
-  const linhas = documentos.map(d => '<tr><td><strong>' + esc(d.competencia) + '</strong></td><td>' + esc(rhTipoLabel(d.tipo_key)) + '</td><td>' + rhFmtData(d.publicado_em) + '</td><td>' + (d.visto_em ? "Visto" : '<span class="tag-admin">NOVO</span>') + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir PDF</button></td></tr>').join("");
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus documentos</div>' + (linhas
-    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th><th>Tipo</th><th>Publicado em</th><th>Status</th><th>Ação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
-    : '<div class="rh-vazio">Nenhum documento publicado ainda.</div>') + '</div>';
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus documentos</div>' + (documentos.length ? '<div id="rh-meus-tb"></div>' : '<div class="rh-vazio">Nenhum documento publicado ainda.</div>') + '</div>';
+  if (documentos.length) rhTbMount(document.getElementById("rh-meus-tb"), rhCfgDocs(documentos.map(d => ({ ...d, status: "publicado" })), false, "meus_documentos", null));
+}
+// Colunas da tabela de documentos de uma pessoa (colaborador ou card do RH).
+function rhCfgDocs(docs, rh, nome, pessoa) {
+  return {
+    nome, rows: docs, sort: { i: 0, dir: "desc" },
+    docId: d => d.id, docNome: d => rhTipoLabel(d.tipo_key) + "_" + (d.competencia || "") + (pessoa ? "_" + pessoa : ""),
+    cols: [
+      { label: "Competência", get: d => rhMesLabel(d.competencia), sortv: d => d.competencia, html: d => '<strong>' + esc(rhMesLabel(d.competencia)) + '</strong>' },
+      { label: "Tipo", get: d => rhTipoLabel(d.tipo_key) },
+      { label: rh ? "Situação" : "Status", get: d => rh ? (RH_STATUS_DOC[d.status] || d.status) + (d.status === "publicado" && !d.visto_em ? " · não visto" : "") : (d.visto_em ? "Visto" : "Novo"),
+        html: d => rh ? esc(RH_STATUS_DOC[d.status] || d.status) + (d.status === "publicado" && !d.visto_em ? ' <span class="tag-admin">NÃO VISTO</span>' : '') : (d.visto_em ? "Visto" : '<span class="tag-admin">NOVO</span>') },
+      { label: "Publicado em", get: d => d.publicado_em ? rhFmtData(d.publicado_em) : "", sortv: d => d.publicado_em || "" },
+      { label: "Ação", get: () => "", nofilter: true, exp: false, html: d => '<button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir PDF</button>' }
+    ]
+  };
 }
 function rhPrepararFoto(file) {
   return new Promise((res, rej) => {
@@ -838,9 +871,10 @@ let rhMeus = null;
 function rhDesenharMeus() {
   const c = document.getElementById("rh-content"), d = rhMeus.dados;
   c.innerHTML = rhPerfilHtml(d, { fotoFn: "rhTrocarMinhaFoto(this)" }) +
-    rhBlocosDocs(rhMeus.documentos, rhMeus.aba, "rhMeus.aba='%K';rhDesenharMeus()", false) +
+    rhBlocosDocs(rhMeus.documentos, rhMeus.aba, "rhMeus.aba='%K';rhDesenharMeus()", false, null) +
     '<p style="margin:12px 4px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH. A foto você mesmo(a) pode trocar.</p>';
   aplicarFoto(document.getElementById("rh-avatar-lg"), d.foto_url || rhFoto);
+  rhBlocosMontar();
 }
 async function rhRenderDados(c) {
   const { dados } = await rhCall("meus_dados");
@@ -861,12 +895,24 @@ function rhDesenharPessoas(c) {
   c = c || document.getElementById("rh-content");
   const todas = rhPessoasCache || [], f = rhPessoasFiltro;
   const lista = todas.filter(p => f === "todos" || (f === "ativos" ? p.active : !p.active));
-  const linhas = lista.map(p => '<tr class="pes-row" tabindex="0" role="button" onclick="rhAbrirPessoa(' + p.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();rhAbrirPessoa(' + p.id + ')}"><td><strong>' + esc(p.matricula || "—") + '</strong></td><td><div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span></div></td><td>' + esc(p.department_name || "—") + '</td><td>' + esc(rhAniv(p.aniversario)) + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
   const semMat = todas.filter(p => !p.matricula && p.active).length, nAtivos = todas.filter(p => p.active).length;
   const opt = (v, t) => '<option value="' + v + '"' + (f === v ? " selected" : "") + '>' + t + '</option>';
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select aria-label="Filtrar por situação" class="pes-filtro" onchange="rhPessoasFiltro=this.value;rhDesenharPessoas()">' + opt("ativos", "Ativos") + opt("arquivados", "Arquivados") + opt("todos", "Todos") + '</select><span class="badge-page">' + nAtivos + ' ativos · ' + semMat + ' sem matrícula</span></span></div>' + (lista.length
-    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Aniversário</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
-    : '<div class="rh-vazio">Nenhuma pessoa nesta situação.</div>') + '<p style="margin-top:12px;font-size:12px;color:var(--muted)">Clique em uma pessoa para abrir o cadastro dela. Somente leitura por enquanto, exceto a foto.</p></div>';
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select aria-label="Filtrar por situação" class="pes-filtro" onchange="rhPessoasFiltro=this.value;rhDesenharPessoas()">' + opt("ativos", "Ativos") + opt("arquivados", "Arquivados") + opt("todos", "Todos") + '</select><span class="badge-page">' + nAtivos + ' ativos · ' + semMat + ' sem matrícula</span></span></div><div id="rh-pes-tb"></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Clique em uma pessoa para abrir o cadastro dela. Somente leitura por enquanto, exceto a foto.</p></div>';
+  const portalTxt = p => p.portal ? p.portal.username + (p.portal.ativo ? "" : " · inativo") : "sem acesso";
+  rhTbMount(document.getElementById("rh-pes-tb"), {
+    nome: "pessoas", rows: lista,
+    rowAttr: p => ' class="pes-row" tabindex="0" role="button" onclick="rhAbrirPessoa(' + p.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();rhAbrirPessoa(' + p.id + ')}"',
+    cols: [
+      { label: "Matrícula", num: true, get: p => p.matricula || "", html: p => '<strong>' + esc(p.matricula || "—") + '</strong>' },
+      { label: "Nome", get: p => p.name, html: p => '<div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span></div>' },
+      { label: "Departamento", get: p => p.department_name || "" },
+      { label: "Aniversário", get: p => p.aniversario || "", sortv: p => p.aniversario ? p.aniversario.split("/").reverse().join("") : "" },
+      { label: "Admissão", get: p => p.data_admissao ? rhFmtData(p.data_admissao) : "", sortv: p => p.data_admissao || "",
+        html: p => rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") , csv: p => (p.data_admissao ? rhFmtData(p.data_admissao) : "") + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") },
+      { label: "Status", get: p => p.active ? "Ativo" : "Arquivado", html: p => '<span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span>' },
+      { label: "Portal", get: portalTxt, html: p => p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>' }
+    ]
+  });
 }
 const RH_STATUS_DOC = { publicado: "Publicado", rascunho: "Rascunho" };
 let rhPessoaAtual = null;
@@ -880,24 +926,25 @@ async function rhAbrirPessoa(id) {
   } catch (e) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; }
 }
 // Blocos de documentos por tipo (Holerite, 13º, Férias, Folha de ponto, Comprovantes, Certificados, Avaliação, PDI…).
-function rhBlocosDocs(docs, aba, setJs, rh) {
+let rhBlocoCfg = null;
+function rhBlocosDocs(docs, aba, setJs, rh, pessoa) {
   const tipos = rhTipos.slice().sort((x, y) => (x.ordem || 0) - (y.ordem || 0));
   const conta = k => docs.filter(d => d.tipo_key === k).length;
   const ativa = tipos.some(x => x.key === aba) ? aba : (tipos.find(x => conta(x.key))?.key || (tipos[0] && tipos[0].key));
   const abas = tipos.map(x => '<button type="button" class="rh-tab' + (ativa === x.key ? " on" : "") + '" role="tab" aria-selected="' + (ativa === x.key) + '" onclick="' + setJs.replace("%K", x.key) + '">' + esc(x.label) + ' <span class="n">' + conta(x.key) + '</span></button>').join("");
   const ls = docs.filter(d => d.tipo_key === ativa);
-  const cab = rh ? '<th>Situação</th>' : '<th>Status</th>';
-  const corpo = ls.length
-    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th>' + cab + '<th>Publicado em</th><th>Ação</th></tr></thead><tbody>' + ls.map(d => '<tr><td><strong>' + esc(d.competencia || "—") + '</strong></td><td>' + (rh ? esc(RH_STATUS_DOC[d.status] || d.status) + (d.status === "publicado" && !d.visto_em ? ' <span class="tag-admin">NÃO VISTO</span>' : '') : (d.visto_em ? "Visto" : '<span class="tag-admin">NOVO</span>')) + '</td><td>' + rhFmtData(d.publicado_em) + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir PDF</button></td></tr>').join("") + '</tbody></table></div>'
-    : '<div class="rh-vazio">Nenhum documento de ' + esc((tipos.find(x => x.key === ativa) || {}).label || "este tipo") + ' ainda.</div>';
+  rhBlocoCfg = ls.length ? rhCfgDocs(ls, rh, "documentos_" + ativa, pessoa) : null;
+  const corpo = ls.length ? '<div id="rh-bloco-tb"></div>' : '<div class="rh-vazio">Nenhum documento de ' + esc((tipos.find(x => x.key === ativa) || {}).label || "este tipo") + ' ainda.</div>';
   return '<div class="admin-card" style="margin-top:14px"><div class="admin-card-h">Documentos</div><div class="rh-tabs" role="tablist">' + abas + '</div>' + corpo + '</div>';
 }
+function rhBlocosMontar() { const el = document.getElementById("rh-bloco-tb"); if (el && rhBlocoCfg) rhTbMount(el, rhBlocoCfg); }
 function rhDesenharPessoa() {
   const p = rhPessoaAtual, c = document.getElementById("rh-content");
   c.innerHTML = '<div style="margin:0 0 10px"><button type="button" class="btn-edit" onclick="rhAbrirAba(\'pessoas\')">← Voltar para Pessoas</button></div>' +
     rhPerfilHtml(p.dados, { rh: true, fotoFn: "rhTrocarFotoCard(this)" }) +
-    (p.documentos ? rhBlocosDocs(p.documentos, p.aba, "rhPessoaAtual.aba='%K';rhDesenharPessoa()", true) : '<div class="admin-card" style="margin-top:14px"><div class="rh-vazio">Você não tem permissão para ver os documentos desta pessoa.</div></div>');
+    (p.documentos ? rhBlocosDocs(p.documentos, p.aba, "rhPessoaAtual.aba='%K';rhDesenharPessoa()", true, p.dados.name) : '<div class="admin-card" style="margin-top:14px"><div class="rh-vazio">Você não tem permissão para ver os documentos desta pessoa.</div></div>');
   aplicarFoto(document.getElementById("rh-avatar-lg"), p.dados.foto_url);
+  rhBlocosMontar();
 }
 async function rhTrocarFotoCard(inp) {
   const msg = document.getElementById("rh-foto-msg"), p = rhPessoaAtual;
@@ -910,12 +957,170 @@ async function rhTrocarFotoCard(inp) {
   } catch (e) { msg.textContent = e.message; }
   inp.value = "";
 }
+// ── Tabelas: ordenar, filtrar por coluna, pesquisar e exportar ──
+const RHTB = {};
+const rhNorm = s => rhSemAcento(String(s == null ? "" : s)).toLowerCase();
+const RH_MESES_NOME = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+function rhMesLabel(v) { const m = /^(\d{4})-(\d{2})$/.exec(v || ""); return m ? RH_MESES_NOME[+m[2] - 1] + "/" + m[1] : (v || "—"); }
+const RH_SVG_FILTRO = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
+// cfg: { cols:[{label,get,html?,sortv?,num?,exp?,nofilter?,csv?}], rows, sort?, nome, rowAttr?, docId?, docNome? }
+function rhTbMount(el, cfg) {
+  if (!el.id) el.id = "tb" + Math.random().toString(36).slice(2, 8);
+  const id = el.id;
+  RHTB[id] = { id, cfg, q: "", sort: cfg.sort || null, filters: {}, sel: new Set() };
+  el.innerHTML = '<div class="tb-bar"><input type="search" class="tb-q" placeholder="Pesquisar em todas as colunas…" aria-label="Pesquisar na tabela" oninput="rhTbBusca(\'' + id + '\',this.value)"><span class="tb-n" id="' + id + '-n" aria-live="polite"></span><span class="tb-sp"></span>' +
+    (cfg.docId ? '<button type="button" class="btn-edit" id="' + id + '-bd" onclick="rhTbBaixarDocs(\'' + id + '\')"></button>' : '') +
+    '<button type="button" class="btn-edit" onclick="rhTbCsv(\'' + id + '\')">Exportar CSV</button></div><div class="table-scroll" id="' + id + '-b"></div>';
+  rhTbDesenhar(id);
+}
+function rhTbLinhas(st) {
+  const cols = st.cfg.cols, q = rhNorm(st.q).trim();
+  let ls = st.cfg.rows.filter(r => {
+    for (let i = 0; i < cols.length; i++) { const f = st.filters[i]; if (f && !f.has(String(cols[i].get(r) == null ? "" : cols[i].get(r)))) return false; }
+    return q ? cols.some(c => c.exp !== false && rhNorm(c.get(r)).includes(q)) : true;
+  });
+  if (st.sort) {
+    const c = cols[st.sort.i], dir = st.sort.dir === "desc" ? -1 : 1;
+    const vazio = v => v === "" || v == null;
+    ls = ls.map((r, i) => ({ r, i, v: c.sortv ? c.sortv(r) : c.get(r) })).sort((a, b) => {
+      if (vazio(a.v) || vazio(b.v)) return vazio(a.v) && vazio(b.v) ? a.i - b.i : (vazio(a.v) ? 1 : -1);
+      const d = c.num ? (parseFloat(a.v) || 0) - (parseFloat(b.v) || 0) : String(a.v).localeCompare(String(b.v), "pt-BR", { numeric: true, sensitivity: "base" });
+      return d ? d * dir : a.i - b.i;
+    }).map(x => x.r);
+  }
+  return ls;
+}
+function rhTbDesenhar(id) {
+  const st = RHTB[id], cfg = st.cfg, ls = rhTbLinhas(st), docs = !!cfg.docId;
+  const ids = docs ? ls.map(cfg.docId).filter(Boolean) : [];
+  const todosSel = docs && ids.length && ids.every(x => st.sel.has(x));
+  const th = cfg.cols.map((c, i) => {
+    const s = st.sort && st.sort.i === i ? st.sort.dir : "", f = !!st.filters[i];
+    return '<th aria-sort="' + (s === "asc" ? "ascending" : s === "desc" ? "descending" : "none") + '"><div class="tb-th"><button type="button" class="tb-sort" onclick="rhTbOrdenar(\'' + id + '\',' + i + ')" title="Ordenar por ' + esc(c.label) + '">' + esc(c.label) + '<span class="tb-seta">' + (s === "asc" ? "▲" : s === "desc" ? "▼" : "↕") + '</span></button>' +
+      (c.nofilter ? '' : '<button type="button" class="tb-f' + (f ? " on" : "") + '" aria-label="Filtrar ' + esc(c.label) + '" title="Filtrar ' + esc(c.label) + '" onclick="rhTbFiltro(event,\'' + id + '\',' + i + ')">' + RH_SVG_FILTRO + '</button>') + '</div></th>';
+  }).join("");
+  const corpo = ls.map(r => '<tr' + (cfg.rowAttr ? cfg.rowAttr(r) : "") + '>' + (docs ? '<td class="tb-chk">' + (cfg.docId(r) ? '<input type="checkbox" aria-label="Selecionar documento"' + (st.sel.has(cfg.docId(r)) ? " checked" : "") + ' onclick="event.stopPropagation()" onchange="rhTbSel(\'' + id + '\',\'' + esc(cfg.docId(r)) + '\',this.checked)">' : "") + '</td>' : '') + cfg.cols.map(c => '<td>' + (c.html ? c.html(r) : esc(c.get(r) == null || c.get(r) === "" ? "—" : c.get(r))) + '</td>').join("") + '</tr>').join("");
+  document.getElementById(id + "-b").innerHTML = ls.length
+    ? '<table class="admin-table"><thead><tr>' + (docs ? '<th class="tb-chk"><input type="checkbox" aria-label="Selecionar todos os documentos da lista"' + (todosSel ? " checked" : "") + ' onchange="rhTbSelTodos(\'' + id + '\',this.checked)"></th>' : '') + th + '</tr></thead><tbody>' + corpo + '</tbody></table>'
+    : '<div class="rh-vazio">Nenhum resultado para esta pesquisa ou filtro.</div>';
+  const filtros = Object.keys(st.filters).length;
+  document.getElementById(id + "-n").innerHTML = ls.length + " de " + cfg.rows.length + (ls.length === 1 ? " registro" : " registros") + (st.q || filtros ? ' · <button type="button" class="tb-limpar" onclick="rhTbLimpar(\'' + id + '\')">Limpar pesquisa e filtros</button>' : "");
+  if (docs) {
+    const b = document.getElementById(id + "-bd"), n = st.sel.size ? ids.filter(x => st.sel.has(x)).length : ids.length;
+    b.style.display = ids.length ? "" : "none";
+    b.textContent = n === 1 ? "Baixar PDF" : st.sel.size ? "Baixar selecionados (" + n + ")" : "Baixar todos (" + n + ")";
+  }
+}
+function rhTbBusca(id, v) { RHTB[id].q = v; rhTbDesenhar(id); }
+function rhTbOrdenar(id, i) {
+  const st = RHTB[id], s = st.sort;
+  st.sort = !s || s.i !== i ? { i, dir: "asc" } : s.dir === "asc" ? { i, dir: "desc" } : null;
+  rhTbDesenhar(id);
+}
+function rhTbSel(id, docId, on) { const st = RHTB[id]; on ? st.sel.add(docId) : st.sel.delete(docId); rhTbDesenhar(id); }
+function rhTbSelTodos(id, on) { const st = RHTB[id]; rhTbLinhas(st).map(st.cfg.docId).filter(Boolean).forEach(x => on ? st.sel.add(x) : st.sel.delete(x)); rhTbDesenhar(id); }
+function rhTbLimpar(id) {
+  const st = RHTB[id]; st.q = ""; st.filters = {};
+  const q = document.querySelector("#" + id + " .tb-q"); if (q) q.value = "";
+  rhTbDesenhar(id);
+}
+// Filtro por coluna: lista de valores com pesquisa e seleção (como em planilha).
+let rhPop = null;
+function rhTbFechar() { const p = document.getElementById("tb-pop"); if (p) p.remove(); rhPop = null; }
+document.addEventListener("click", e => { if (rhPop && !e.target.closest("#tb-pop")) rhTbFechar(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") rhTbFechar(); });
+function rhTbFiltro(ev, id, i) {
+  ev.stopPropagation(); rhTbFechar();
+  const st = RHTB[id], c = st.cfg.cols[i];
+  const vals = [...new Set(st.cfg.rows.map(r => String(c.get(r) == null ? "" : c.get(r))))].sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" }));
+  rhPop = { id, i, vals, sel: new Set(st.filters[i] ? [...st.filters[i]] : vals), q: "" };
+  const r = ev.currentTarget.getBoundingClientRect(), p = document.createElement("div");
+  p.id = "tb-pop"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Filtrar " + c.label);
+  p.style.top = Math.min(r.bottom + 6, window.innerHeight - 340) + "px"; p.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 270)) + "px";
+  p.innerHTML = '<input type="search" placeholder="Pesquisar valores…" aria-label="Pesquisar valores" oninput="rhTbPopBusca(this.value)"><label class="tb-all"><input type="checkbox" id="tb-pop-all" onchange="rhTbPopTodos(this.checked)"> Selecionar todos</label><div class="tb-list" id="tb-pop-l"></div><div class="tb-pop-f"><button type="button" class="btn-edit" onclick="rhTbPopLimpar()">Limpar filtro</button><button type="button" class="btn-add" style="min-height:34px;padding:0 14px" onclick="rhTbPopOk()">Aplicar</button></div>';
+  document.body.appendChild(p); rhTbPopLista(); p.querySelector("input").focus();
+}
+function rhTbPopVisiveis() { const q = rhNorm(rhPop.q); return rhPop.vals.filter(v => !q || rhNorm(v || "(vazio)").includes(q)); }
+function rhTbPopLista() {
+  const vis = rhTbPopVisiveis();
+  document.getElementById("tb-pop-l").innerHTML = vis.length ? vis.map(v => '<label><input type="checkbox" data-v="' + esc(v) + '"' + (rhPop.sel.has(v) ? " checked" : "") + ' onchange="rhTbPopItem(this)"> ' + esc(v === "" ? "(vazio)" : v) + '</label>').join("") : '<div class="rh-vazio" style="padding:10px">Nada encontrado.</div>';
+  document.getElementById("tb-pop-all").checked = vis.length > 0 && vis.every(v => rhPop.sel.has(v));
+}
+function rhTbPopBusca(v) { rhPop.q = v; rhTbPopLista(); }
+function rhTbPopItem(cb) { const v = cb.getAttribute("data-v"); cb.checked ? rhPop.sel.add(v) : rhPop.sel.delete(v); rhTbPopLista(); }
+function rhTbPopTodos(on) { rhTbPopVisiveis().forEach(v => on ? rhPop.sel.add(v) : rhPop.sel.delete(v)); rhTbPopLista(); }
+function rhTbPopOk() {
+  const { id, i, vals, sel } = rhPop, st = RHTB[id];
+  if (sel.size === vals.length) delete st.filters[i]; else st.filters[i] = new Set(sel);
+  rhTbFechar(); rhTbDesenhar(id);
+}
+function rhTbPopLimpar() { const { id, i } = rhPop; delete RHTB[id].filters[i]; rhTbFechar(); rhTbDesenhar(id); }
+// ── Exportar ──
+function rhBaixarBlob(blob, nome) {
+  const a = document.createElement("a"), u = URL.createObjectURL(blob);
+  a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 10000);
+}
+const rhHoje = () => new Date().toISOString().slice(0, 10);
+const rhNomeArq = s => String(s || "documento").replace(/[\\/:*?"<>|\r\n]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 120);
+function rhTbCsv(id) {
+  const st = RHTB[id], cols = st.cfg.cols.filter(c => c.exp !== false), q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const linhas = [cols.map(c => q(c.label)).join(";")].concat(rhTbLinhas(st).map(r => cols.map(c => q(c.csv ? c.csv(r) : c.get(r))).join(";")));
+  rhBaixarBlob(new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" }), rhNomeArq((st.cfg.nome || "tabela") + "_" + rhHoje()) + ".csv");
+}
+async function rhTbBaixarDocs(id) {
+  const st = RHTB[id], cfg = st.cfg, btn = document.getElementById(id + "-bd");
+  const ls = rhTbLinhas(st).filter(r => cfg.docId(r)), alvo = st.sel.size ? ls.filter(r => st.sel.has(cfg.docId(r))) : ls;
+  if (!alvo.length) return;
+  const rot = btn.textContent; btn.disabled = true;
+  try { await rhBaixarDocs(alvo.map(r => ({ id: cfg.docId(r), nome: cfg.docNome ? cfg.docNome(r) : "documento" })), t => { btn.textContent = t; }, cfg.nome); }
+  catch (e) { alert(e.message || "Não foi possível baixar."); }
+  btn.disabled = false; btn.textContent = rot; rhTbDesenhar(id);
+}
+const RH_ZIP_LIMITE = 80 * 1024 * 1024;
+// 1 documento: PDF direto. Vários: ZIP (dividido em partes de ~80 MB quando ficar grande).
+async function rhBaixarDocs(itens, progresso, nomeBase) {
+  const urls = {};
+  for (let i = 0; i < itens.length; i += 200) {
+    const r = await rhCall("documentos_urls", { ids: itens.slice(i, i + 200).map(x => x.id) });
+    r.urls.forEach(u => { urls[u.id] = u.url; });
+  }
+  const ok = itens.filter(x => urls[x.id]);
+  if (!ok.length) throw new Error("Sem permissão para baixar estes documentos.");
+  const buscar = async x => { const resp = await fetch(urls[x.id]); if (!resp.ok) throw new Error("Falha ao baixar um dos arquivos."); return await resp.arrayBuffer(); };
+  if (ok.length === 1) {
+    progresso("Baixando…");
+    rhBaixarBlob(new Blob([await buscar(ok[0])], { type: "application/pdf" }), rhNomeArq(ok[0].nome) + ".pdf");
+  } else {
+    await rhLoadScript(RH_LIBS.jszip);
+    const base = rhNomeArq((nomeBase || "documentos") + "_" + rhHoje());
+    let zip = new JSZip(), tam = 0, parte = 0, feitos = 0; const usados = new Set(), partes = [];
+    const fechar = async () => { if (!tam) return; partes.push(await zip.generateAsync({ type: "blob" })); zip = new JSZip(); tam = 0; };
+    for (let i = 0; i < ok.length; i += 5) {
+      const lote = ok.slice(i, i + 5), bufs = await Promise.all(lote.map(buscar));
+      for (let j = 0; j < lote.length; j++) {
+        let n = rhNomeArq(lote[j].nome), k = 1; const b0 = n;
+        while (usados.has(n.toLowerCase())) n = b0 + " (" + (++k) + ")";
+        usados.add(n.toLowerCase()); zip.file(n + ".pdf", bufs[j]); tam += bufs[j].byteLength; feitos++;
+        if (tam >= RH_ZIP_LIMITE) await fechar();
+      }
+      progresso("Baixando " + feitos + "/" + ok.length + "…");
+    }
+    await fechar();
+    for (let p = 0; p < partes.length; p++) {
+      rhBaixarBlob(partes[p], base + (partes.length > 1 ? "_parte" + (p + 1) + "de" + partes.length : "") + ".zip");
+      if (p < partes.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  if (ok.length < itens.length) alert((itens.length - ok.length) + " documento(s) não puderam ser baixados por falta de permissão.");
+}
 // ── Importação de documentos em PDF (leitura no navegador: texto do PDF, com OCR de reserva) ──
 const RH_LIBS = {
   pdfjs: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
   pdfjsWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
   pdflib: "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
-  tess: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"
+  tess: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+  jszip: "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
 };
 const rhScripts = {};
 function rhLoadScript(url) {
@@ -997,12 +1202,18 @@ function rhB64(bytes) {
   for (let i = 0; i < bytes.length; i += n) s += String.fromCharCode.apply(null, bytes.subarray(i, i + n));
   return btoa(s);
 }
+// Lista de competências para a importação: do próximo mês até 24 meses atrás. "" = detectar pelo recibo.
+function rhOpcoesCompetencia() {
+  const h = new Date(), o = ['<option value="">Detectar pelo recibo</option>'];
+  for (let i = -1; i < 24; i++) { const d = new Date(h.getFullYear(), h.getMonth() - i, 1), k = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); o.push('<option value="' + k + '">' + rhMesLabel(k) + '</option>'); }
+  return o.join("");
+}
 async function rhRenderDocs(c) {
   const opts = '<option value="auto">Automático (pelo cabeçalho do recibo)</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>').join("");
   c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Importar PDF de recibos</div>' +
     '<p style="font-size:13px;color:var(--muted);margin:0 0 12px">Envie o PDF com todos os colaboradores. O portal separa uma página por pessoa, lê a matrícula e abre uma tela de conferência. Nada fica visível para o colaborador antes de você publicar.</p>' +
     '<div class="rh-filtros"><div><label>Tipo</label><select id="rh-i-tipo">' + opts + '</select></div>' +
-    '<div><label>Competência (só se não detectar)</label><input id="rh-i-comp" placeholder="2026-11" maxlength="7"></div>' +
+    '<div><label for="rh-i-comp">Competência</label><select id="rh-i-comp">' + rhOpcoesCompetencia() + '</select></div>' +
     '<div><label>Arquivo PDF</label><input id="rh-i-file" type="file" accept="application/pdf,.pdf" style="padding-top:8px"></div>' +
     '<button class="btn-add" id="rh-i-btn" onclick="rhImportar()">Ler e enviar</button></div>' +
     '<div id="rh-i-prog" style="font-size:13px;color:var(--muted);min-height:20px"></div></div>' +
@@ -1015,8 +1226,19 @@ async function rhCarregarLotes() {
   try {
     const { lotes } = await rhCall("lotes_list");
     if (!lotes.length) { box.innerHTML = '<div class="rh-vazio">Nenhum lote ainda.</div>'; return; }
-    box.innerHTML = '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Enviado em</th><th>Tipo</th><th>Competência</th><th>Arquivo</th><th>Docs</th><th>Sem vínculo</th><th>Status</th><th></th></tr></thead><tbody>' + lotes.map(l =>
-      '<tr><td>' + rhFmtData(l.created_at) + '</td><td>' + esc(rhTipoLabel(l.tipo_key)) + '</td><td>' + esc(l.competencia) + '</td><td>' + esc(l.nome_arquivo || "—") + '</td><td>' + l.total + '</td><td>' + (l.sem_vinculo || "—") + '</td><td>' + esc(RH_ST[l.status] || l.status) + '</td><td>' + (["processando", "conferencia"].includes(l.status) || l.status === "publicado" ? '<button class="btn-edit" onclick="rhConferirLote(\'' + l.id + '\')">' + (l.status === "publicado" ? "Ver" : "Conferir") + '</button>' : "") + '</td></tr>').join("") + '</tbody></table></div>';
+    rhTbMount(box, {
+      nome: "lotes", rows: lotes,
+      cols: [
+        { label: "Enviado em", get: l => rhFmtData(l.created_at), sortv: l => l.created_at },
+        { label: "Tipo", get: l => rhTipoLabel(l.tipo_key) },
+        { label: "Competência", get: l => rhMesLabel(l.competencia), sortv: l => l.competencia },
+        { label: "Arquivo", get: l => l.nome_arquivo || "" },
+        { label: "Docs", num: true, get: l => l.total },
+        { label: "Sem vínculo", num: true, get: l => l.sem_vinculo || 0 },
+        { label: "Status", get: l => RH_ST[l.status] || l.status },
+        { label: "Ação", get: () => "", nofilter: true, exp: false, html: l => ["processando", "conferencia", "publicado"].includes(l.status) ? '<button class="btn-edit" onclick="rhConferirLote(\'' + l.id + '\')">' + (l.status === "publicado" ? "Ver" : "Conferir") + '</button>' : "" }
+      ]
+    });
   } catch (e) { box.innerHTML = '<div class="rh-vazio">' + esc(e.message) + '</div>'; }
 }
 async function rhImportar() {
@@ -1041,7 +1263,7 @@ async function rhImportar() {
       const r = await rhLerPagina(page);
       if (!r.matricula && !r.nome) { res.ignoradas++; continue; }
       const tipo = tipoSel === "auto" ? r.tipo : tipoSel;
-      const comp = r.competencia || compManual;
+      const comp = compManual || r.competencia;
       if (!comp) { res.semComp++; continue; }
       const k = tipo + "|" + comp;
       if (!lotes[k]) lotes[k] = (await rhCall("lote_criar", { tipo_key: tipo, competencia: comp, nome_arquivo: file.name })).id;
@@ -1110,24 +1332,38 @@ async function rhCancelarLote(id) {
   if (!confirm("Cancelar o lote? Os rascunhos serão descartados.")) return;
   try { await rhCall("lote_cancelar", { id }); await rhAbrirAba("docs"); } catch (e) { alert(e.message); }
 }
+let rhConsDocs = [], rhConsTipo = "", rhConsComp = "";
 async function rhRenderConsolidado(c) {
-  const opts = '<option value="">Todos</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>').join("");
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Consolidado de documentos</div><div class="rh-filtros"><div><label>Tipo</label><select id="rh-f-tipo">' + opts + '</select></div><div><label>Competência</label><input id="rh-f-comp" placeholder="2026-11"></div><button class="btn-add" onclick="rhCarregarConsolidado()">Filtrar</button></div><div id="rh-cons-tabela"></div></div>';
-  await rhCarregarConsolidado();
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Consolidado de documentos</div><div class="rh-vazio">Carregando…</div></div>';
+  rhConsDocs = (await rhCall("documentos_list", { limit: 1000 })).documentos;
+  rhDesenharConsolidado(c);
 }
-async function rhCarregarConsolidado() {
+function rhDesenharConsolidado(c) {
+  c = c || document.getElementById("rh-content");
+  const comps = [...new Set(rhConsDocs.map(d => d.competencia).filter(Boolean))].sort().reverse();
+  if (rhConsComp && !comps.includes(rhConsComp)) rhConsComp = "";
+  const sel = (v, cur) => v === cur ? " selected" : "";
+  const optT = '<option value="">Todos os tipos</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '"' + sel(t.key, rhConsTipo) + '>' + esc(t.label) + '</option>').join("");
+  const optC = '<option value="">Todas as competências</option>' + comps.map(k => '<option value="' + k + '"' + sel(k, rhConsComp) + '>' + esc(rhMesLabel(k)) + '</option>').join("");
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Consolidado de documentos</div><div class="rh-filtros"><div><label for="rh-f-tipo">Tipo</label><select id="rh-f-tipo" onchange="rhConsTipo=this.value;rhDesenharConsolidado()">' + optT + '</select></div><div><label for="rh-f-comp">Competência</label><select id="rh-f-comp" onchange="rhConsComp=this.value;rhDesenharConsolidado()">' + optC + '</select></div></div><div id="rh-cons-tabela"></div></div>';
+  const docs = rhConsDocs.filter(d => (!rhConsTipo || d.tipo_key === rhConsTipo) && (!rhConsComp || d.competencia === rhConsComp));
   const box = document.getElementById("rh-cons-tabela");
-  const tipo = document.getElementById("rh-f-tipo").value;
-  const competencia = document.getElementById("rh-f-comp").value.trim();
-  box.innerHTML = '<div class="rh-vazio">Carregando…</div>';
-  try {
-    const { documentos } = await rhCall("documentos_list", { tipo: tipo || undefined, competencia: competencia || undefined });
-    if (!documentos.length) { box.innerHTML = '<div class="rh-vazio">Nenhum documento ainda.</div>'; return; }
-    box.innerHTML = '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Pessoa</th><th>Tipo</th><th>Competência</th><th>Status</th><th>Visto</th><th>Odoo</th><th></th></tr></thead><tbody>' + documentos.map(d => {
-      const e = d.odoo_hr_employee || {};
-      return '<tr><td>' + esc(e.matricula || d.matricula_lida || "—") + '</td><td>' + esc(e.name || "(sem vínculo)") + '</td><td>' + esc(rhTipoLabel(d.tipo_key)) + '</td><td>' + esc(d.competencia) + '</td><td>' + esc(d.status) + '</td><td>' + (d.visto_em ? rhFmtData(d.visto_em) : "—") + '</td><td>' + esc(d.odoo_status) + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir</button></td></tr>';
-    }).join("") + '</tbody></table></div>';
-  } catch (e) { box.innerHTML = '<div class="rh-vazio">' + esc(e.message) + '</div>'; }
+  if (!docs.length) { box.innerHTML = '<div class="rh-vazio">Nenhum documento ainda.</div>'; return; }
+  const emp = d => d.odoo_hr_employee || {};
+  rhTbMount(box, {
+    nome: "consolidado_documentos", rows: docs,
+    docId: d => d.id, docNome: d => rhTipoLabel(d.tipo_key) + "_" + (d.competencia || "") + "_" + (emp(d).name || "sem vinculo"),
+    cols: [
+      { label: "Matrícula", num: true, get: d => emp(d).matricula || d.matricula_lida || "" },
+      { label: "Pessoa", get: d => emp(d).name || "(sem vínculo)" },
+      { label: "Tipo", get: d => rhTipoLabel(d.tipo_key) },
+      { label: "Competência", get: d => rhMesLabel(d.competencia), sortv: d => d.competencia },
+      { label: "Status", get: d => RH_STATUS_DOC[d.status] || d.status },
+      { label: "Visto", get: d => d.visto_em ? rhFmtData(d.visto_em) : "", sortv: d => d.visto_em || "" },
+      { label: "Odoo", get: d => d.odoo_status || "" },
+      { label: "Ação", get: () => "", nofilter: true, exp: false, html: d => '<button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir</button>' }
+    ]
+  });
 }
 // ── Admin ──
 async function irParaAdmin() {
