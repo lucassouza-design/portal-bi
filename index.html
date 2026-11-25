@@ -127,6 +127,14 @@
   .tile .ti svg { width:18px; height:18px; }
   .tile small { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .tile b { font-size:13.5px; font-weight:600; color:var(--text); word-break:break-word; }
+  .pes-row { cursor:pointer; }
+  .pes-row:hover td { background:var(--tab-hover); }
+  .pes-row:focus-visible { outline:2px solid var(--navy); outline-offset:-2px; }
+  .pes-filtro { min-height:32px; border:1px solid var(--input-bd); border-radius:8px; padding:0 8px; font-family:inherit; font-size:12px; background:var(--white); color:var(--text); }
+  .rh-tabs { display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:12px; overflow-x:auto; }
+  .rh-tab { border:0; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--muted); padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; min-height:44px; }
+  .rh-tab.on { color:var(--navy); border-bottom-color:var(--navy); }
+  .rh-tab .n { display:inline-block; min-width:18px; padding:0 6px; border-radius:999px; background:var(--tab-hover); color:var(--navy); font-size:11px; text-align:center; }
   .pes-n { display:flex; align-items:center; gap:10px; }
   .pes-n .avatar { background:var(--navy); color:#fff; }
   .pes-n .avatar.foto { color:transparent; background-size:cover; background-position:center; }
@@ -815,29 +823,92 @@ async function rhTrocarMinhaFoto(inp) {
   } catch (e) { msg.textContent = e.message; }
   inp.value = "";
 }
-async function rhTrocarFotoDe(inp, id) {
-  try {
-    const r = await rhEnviarFoto(inp.files[0], id);
-    const av = document.getElementById("rh-pav-" + id);
-    aplicarFoto(av, r.foto_url);
-    if (r.odoo !== "ok") alert("Foto salva no portal, mas não foi gravada no Odoo (" + r.odoo + ").");
-  } catch (e) { alert(e.message); }
-  inp.value = "";
+function rhAniv(v) { return v || "—"; }
+// Cabeçalho + cartões de dados, usado em "Meus dados" e no card do funcionário (RH).
+function rhPerfilHtml(d, opt) {
+  const campos = [["mail", "E-mail corporativo", d.work_email], ["phone", "Telefone", d.telefone_trabalho || d.celular], ["build", "Departamento", d.department_name], ["brief", "Cargo", d.cargo_oficial || d.job_title], ["user", "Gestor", d.gestor_nome], ["cal", "Admissão", d.data_admissao ? rhFmtData(d.data_admissao) : null], ["cal", "Aniversário", d.aniversario]];
+  if (opt.rh) {
+    if (d.data_saida) campos.push(["cal", "Saída", rhFmtData(d.data_saida)]);
+    campos.push(["id", "Acesso ao portal", d.portal ? d.portal.username + (d.portal.ativo ? "" : " (inativo)") : "Sem acesso"]);
+  }
+  return '<div class="admin-card"><div class="perfil"><div class="avatar-lg" id="rh-avatar-lg">' + esc(iniciaisDe(d.name)) + '</div><div><h2>' + esc(d.name) + '</h2><div class="sub">' + esc(d.cargo_oficial || d.job_title || "") + (d.department_name ? " · " + esc(d.department_name) : "") + '</div><div>' + (d.matricula ? '<span class="pill">Matrícula ' + esc(d.matricula) + '</span>' : '') + (d.active === false ? '<span class="pill">Arquivado</span>' : '<span class="pill ok">Ativo</span>') + '</div></div><div style="margin-left:auto;text-align:right"><label class="btn-edit" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">' + svgIcone("cam").replace("<svg ", '<svg width="16" height="16" ') + 'Trocar foto<input type="file" accept="image/*" hidden onchange="' + opt.fotoFn + '"></label><div id="rh-foto-msg" style="font-size:12px;color:var(--muted);margin-top:6px;max-width:260px"></div></div></div></div>' +
+    '<div class="tiles">' + campos.map(x => '<div class="tile"><span class="ti">' + svgIcone(x[0]) + '</span><div><small>' + x[1] + '</small><b>' + esc(x[2] || "—") + '</b></div></div>').join("") + '</div>';
+}
+let rhMeus = null;
+function rhDesenharMeus() {
+  const c = document.getElementById("rh-content"), d = rhMeus.dados;
+  c.innerHTML = rhPerfilHtml(d, { fotoFn: "rhTrocarMinhaFoto(this)" }) +
+    rhBlocosDocs(rhMeus.documentos, rhMeus.aba, "rhMeus.aba='%K';rhDesenharMeus()", false) +
+    '<p style="margin:12px 4px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH. A foto você mesmo(a) pode trocar.</p>';
+  aplicarFoto(document.getElementById("rh-avatar-lg"), d.foto_url || rhFoto);
 }
 async function rhRenderDados(c) {
   const { dados } = await rhCall("meus_dados");
   if (!dados) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">Seu cadastro ainda não foi encontrado.</div></div>'; return; }
-  const campos = [["mail", "E-mail corporativo", dados.work_email], ["phone", "Telefone", dados.telefone_trabalho || dados.celular], ["build", "Departamento", dados.department_name], ["brief", "Cargo", dados.cargo_oficial || dados.job_title], ["user", "Gestor", dados.gestor_nome], ["cal", "Admissão", dados.data_admissao ? rhFmtData(dados.data_admissao) : null]];
-  c.innerHTML = '<div class="admin-card"><div class="perfil"><div class="avatar-lg" id="rh-avatar-lg">' + esc(iniciaisDe(dados.name)) + '</div><div><h2>' + esc(dados.name) + '</h2><div class="sub">' + esc(dados.cargo_oficial || dados.job_title || "") + (dados.department_name ? " · " + esc(dados.department_name) : "") + '</div><div>' + (dados.matricula ? '<span class="pill">Matrícula ' + esc(dados.matricula) + '</span>' : '') + '<span class="pill ok">Ativo</span></div></div><div style="margin-left:auto;text-align:right"><label class="btn-edit" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">' + svgIcone("cam").replace("<svg ", '<svg width="16" height="16" ') + 'Trocar foto<input type="file" accept="image/*" hidden onchange="rhTrocarMinhaFoto(this)"></label><div id="rh-foto-msg" style="font-size:12px;color:var(--muted);margin-top:6px;max-width:260px"></div></div></div></div>' +
-    '<div class="tiles">' + campos.map(x => '<div class="tile"><span class="ti">' + svgIcone(x[0]) + '</span><div><small>' + x[1] + '</small><b>' + esc(x[2] || "—") + '</b></div></div>').join("") + '</div>' +
-    '<p style="margin:12px 4px;font-size:12px;color:var(--muted)">Dados do cadastro da empresa, somente leitura. Para corrigir algo, fale com o RH. A foto você mesmo(a) pode trocar.</p>';
-  aplicarFoto(document.getElementById("rh-avatar-lg"), dados.foto_url);
+  let documentos = [];
+  try { documentos = (await rhCall("meus_documentos")).documentos.map(d => ({ ...d, status: "publicado" })); } catch (e) {}
+  rhMeus = { dados, documentos, aba: "holerite" };
+  rhDesenharMeus();
 }
+let rhPessoasFiltro = "ativos";
+let rhPessoasCache = null;
 async function rhRenderPessoas(c) {
   const { pessoas } = await rhCall("pessoas_list");
-  const linhas = pessoas.map(p => '<tr><td><strong>' + esc(p.matricula || "—") + '</strong></td><td><div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '" id="rh-pav-' + p.id + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span><label class="btn-edit" style="min-height:28px;display:inline-flex;align-items:center;cursor:pointer;padding:0 8px" title="Trocar foto">' + svgIcone("cam").replace("<svg ", '<svg width="14" height="14" ') + '<input type="file" accept="image/*" hidden onchange="rhTrocarFotoDe(this,' + p.id + ')"></label></div></td><td>' + esc(p.department_name || "—") + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
-  const semMat = pessoas.filter(p => !p.matricula && p.active).length;
-  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span class="badge-page">' + pessoas.length + ' no Odoo · ' + semMat + ' ativos sem matrícula</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Somente leitura por enquanto, exceto a foto. Cadastro e edição pelo portal entram na próxima etapa.</p></div>';
+  rhPessoasCache = pessoas;
+  rhDesenharPessoas(c);
+}
+function rhDesenharPessoas(c) {
+  c = c || document.getElementById("rh-content");
+  const todas = rhPessoasCache || [], f = rhPessoasFiltro;
+  const lista = todas.filter(p => f === "todos" || (f === "ativos" ? p.active : !p.active));
+  const linhas = lista.map(p => '<tr class="pes-row" tabindex="0" role="button" onclick="rhAbrirPessoa(' + p.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();rhAbrirPessoa(' + p.id + ')}"><td><strong>' + esc(p.matricula || "—") + '</strong></td><td><div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span></div></td><td>' + esc(p.department_name || "—") + '</td><td>' + esc(rhAniv(p.aniversario)) + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
+  const semMat = todas.filter(p => !p.matricula && p.active).length, nAtivos = todas.filter(p => p.active).length;
+  const opt = (v, t) => '<option value="' + v + '"' + (f === v ? " selected" : "") + '>' + t + '</option>';
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select aria-label="Filtrar por situação" class="pes-filtro" onchange="rhPessoasFiltro=this.value;rhDesenharPessoas()">' + opt("ativos", "Ativos") + opt("arquivados", "Arquivados") + opt("todos", "Todos") + '</select><span class="badge-page">' + nAtivos + ' ativos · ' + semMat + ' sem matrícula</span></span></div>' + (lista.length
+    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Aniversário</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
+    : '<div class="rh-vazio">Nenhuma pessoa nesta situação.</div>') + '<p style="margin-top:12px;font-size:12px;color:var(--muted)">Clique em uma pessoa para abrir o cadastro dela. Somente leitura por enquanto, exceto a foto.</p></div>';
+}
+const RH_STATUS_DOC = { publicado: "Publicado", rascunho: "Rascunho" };
+let rhPessoaAtual = null;
+async function rhAbrirPessoa(id) {
+  const c = document.getElementById("rh-content");
+  c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
+  try {
+    const r = await rhCall("pessoa_get", { id });
+    rhPessoaAtual = { id, dados: r.dados, documentos: r.documentos, aba: "holerite" };
+    rhDesenharPessoa();
+  } catch (e) { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; }
+}
+// Blocos de documentos por tipo (Holerite, 13º, Férias, Folha de ponto, Comprovantes, Certificados, Avaliação, PDI…).
+function rhBlocosDocs(docs, aba, setJs, rh) {
+  const tipos = rhTipos.slice().sort((x, y) => (x.ordem || 0) - (y.ordem || 0));
+  const conta = k => docs.filter(d => d.tipo_key === k).length;
+  const ativa = tipos.some(x => x.key === aba) ? aba : (tipos.find(x => conta(x.key))?.key || (tipos[0] && tipos[0].key));
+  const abas = tipos.map(x => '<button type="button" class="rh-tab' + (ativa === x.key ? " on" : "") + '" role="tab" aria-selected="' + (ativa === x.key) + '" onclick="' + setJs.replace("%K", x.key) + '">' + esc(x.label) + ' <span class="n">' + conta(x.key) + '</span></button>').join("");
+  const ls = docs.filter(d => d.tipo_key === ativa);
+  const cab = rh ? '<th>Situação</th>' : '<th>Status</th>';
+  const corpo = ls.length
+    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th>' + cab + '<th>Publicado em</th><th>Ação</th></tr></thead><tbody>' + ls.map(d => '<tr><td><strong>' + esc(d.competencia || "—") + '</strong></td><td>' + (rh ? esc(RH_STATUS_DOC[d.status] || d.status) + (d.status === "publicado" && !d.visto_em ? ' <span class="tag-admin">NÃO VISTO</span>' : '') : (d.visto_em ? "Visto" : '<span class="tag-admin">NOVO</span>')) + '</td><td>' + rhFmtData(d.publicado_em) + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir PDF</button></td></tr>').join("") + '</tbody></table></div>'
+    : '<div class="rh-vazio">Nenhum documento de ' + esc((tipos.find(x => x.key === ativa) || {}).label || "este tipo") + ' ainda.</div>';
+  return '<div class="admin-card" style="margin-top:14px"><div class="admin-card-h">Documentos</div><div class="rh-tabs" role="tablist">' + abas + '</div>' + corpo + '</div>';
+}
+function rhDesenharPessoa() {
+  const p = rhPessoaAtual, c = document.getElementById("rh-content");
+  c.innerHTML = '<div style="margin:0 0 10px"><button type="button" class="btn-edit" onclick="rhAbrirAba(\'pessoas\')">← Voltar para Pessoas</button></div>' +
+    rhPerfilHtml(p.dados, { rh: true, fotoFn: "rhTrocarFotoCard(this)" }) +
+    (p.documentos ? rhBlocosDocs(p.documentos, p.aba, "rhPessoaAtual.aba='%K';rhDesenharPessoa()", true) : '<div class="admin-card" style="margin-top:14px"><div class="rh-vazio">Você não tem permissão para ver os documentos desta pessoa.</div></div>');
+  aplicarFoto(document.getElementById("rh-avatar-lg"), p.dados.foto_url);
+}
+async function rhTrocarFotoCard(inp) {
+  const msg = document.getElementById("rh-foto-msg"), p = rhPessoaAtual;
+  try {
+    msg.textContent = "Enviando…";
+    const r = await rhEnviarFoto(inp.files[0], p.id);
+    p.dados.foto_url = r.foto_url;
+    aplicarFoto(document.getElementById("rh-avatar-lg"), r.foto_url);
+    msg.textContent = r.odoo === "ok" ? "Foto atualizada no portal e no Odoo." : "Foto atualizada no portal. Não foi possível gravar no Odoo agora (" + r.odoo + ").";
+  } catch (e) { msg.textContent = e.message; }
+  inp.value = "";
 }
 // ── Importação de documentos em PDF (leitura no navegador: texto do PDF, com OCR de reserva) ──
 const RH_LIBS = {
