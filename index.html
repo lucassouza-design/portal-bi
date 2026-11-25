@@ -83,6 +83,45 @@
   .howto li b svg { width:12px; height:12px; }
 
   /* ===== PORTAL ===== */
+  /* ===== SHELL COM MENU LATERAL ===== */
+  #app-screen { display:none; height:100vh; overflow:hidden; background:var(--page-bg); --w:264px; }
+  #app-screen.mini { --w:78px; }
+  .lat-side { width:var(--w); flex:0 0 var(--w); height:100vh; transition:width .22s ease,flex-basis .22s ease; background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 2px,transparent 2px 22px),var(--hero-bg); color:#fff; display:flex; flex-direction:column; padding:14px 12px; gap:6px; border-radius:0 22px 22px 0; overflow:hidden; z-index:60; box-shadow:0 8px 24px rgba(14,49,105,.25); }
+  .lat-top { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 4px 14px; border-bottom:1px solid rgba(255,255,255,.16); margin-bottom:8px; min-height:62px; }
+  .lat-top img { height:38px; width:auto; }
+  #app-screen.mini .lat-top { justify-content:center; }
+  #app-screen.mini .lat-top img { display:none; }
+  .lat-tg { width:40px; height:40px; flex:0 0 40px; border-radius:12px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12); color:#fff; display:grid; place-items:center; cursor:pointer; }
+  .lat-tg:hover { background:rgba(255,255,255,.22); }
+  .lat-tg svg { width:20px; height:20px; transition:transform .2s; }
+  #app-screen.mini .lat-tg svg { transform:rotate(180deg); }
+  .lat-nav { flex:1; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:2px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.3) transparent; }
+  .lat-sec { font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.6); padding:14px 12px 6px; white-space:nowrap; }
+  #app-screen.mini .lat-sec { height:1px; padding:0; margin:10px 14px; background:rgba(255,255,255,.2); font-size:0; overflow:hidden; }
+  .lat-it { display:flex; align-items:center; gap:12px; min-height:42px; padding:0 12px; border-radius:12px; color:rgba(255,255,255,.9); font-size:13.5px; font-weight:600; cursor:pointer; border:0; background:transparent; width:100%; text-align:left; font-family:inherit; white-space:nowrap; }
+  .lat-it svg { width:20px; height:20px; flex:0 0 20px; }
+  .lat-it:hover { background:rgba(255,255,255,.14); }
+  .lat-it.on { background:#fff; color:#144387; }
+  .lat-it .lbl { overflow:hidden; text-overflow:ellipsis; }
+  .lat-it.sub { padding-left:24px; min-height:38px; font-weight:500; font-size:13px; }
+  .lat-it.sub svg { width:16px; height:16px; flex-basis:16px; }
+  #app-screen.mini .lat-it, #app-screen.mini .lat-it.sub { justify-content:center; padding:0; }
+  #app-screen.mini .lbl { display:none; }
+  .lat-foot { border-top:1px solid rgba(255,255,255,.16); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .lat-user { display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:12px; background:rgba(255,255,255,.1); min-height:46px; white-space:nowrap; overflow:hidden; }
+  .lat-user .avatar { flex:0 0 34px; width:34px; height:34px; }
+  .lat-user strong { display:block; font-size:13px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; }
+  .lat-user small { display:block; font-size:11px; color:rgba(255,255,255,.7); }
+  #app-screen.mini .lat-user { justify-content:center; padding:6px 0; background:transparent; }
+  #app-screen.mini .lat-user > div { display:none; }
+  .lat-main { flex:1; min-width:0; height:100vh; display:flex; flex-direction:column; padding:12px 14px 12px 16px; gap:10px; overflow:hidden; }
+  .lat-bar { display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--border); border-radius:16px; padding:0 18px; min-height:52px; box-shadow:var(--card-shadow); flex-shrink:0; }
+  .lat-bar h2 { font-size:15px; font-weight:700; color:var(--head); margin:0; }
+  .lat-bar span { font-size:12px; color:var(--muted); }
+  .lat-burger { display:none; width:38px; height:38px; border-radius:10px; border:1px solid var(--input-bd); background:var(--white); color:var(--navy); cursor:pointer; align-items:center; justify-content:center; }
+  .lat-burger svg { width:20px; height:20px; }
+  .view { display:none; flex:1; min-height:0; flex-direction:column; }
+  .view.on { display:flex; }
   #portal-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; padding:10px 14px 12px; gap:10px; background:var(--page-bg); }
   .topbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:8px 16px; border-radius:18px; color:#fff; flex-shrink:0; background:repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 2px,transparent 2px 22px),var(--hero-bg); box-shadow:0 8px 22px rgba(14,49,105,.22); }
   .topbar-left { display:flex; align-items:center; gap:12px; }
@@ -197,6 +236,11 @@
     .search-wrap { order:5; flex-basis:100%; }
     .topbar-label, .user-badge strong { display:none; }
     .user-badge { padding:3px; }
+    .lat-burger { display:flex; }
+    .lat-side { position:fixed; left:0; top:0; width:264px; transform:translateX(-105%); transition:transform .22s ease; }
+    #app-screen.open .lat-side { transform:none; }
+    #app-screen.mini { --w:264px; }
+    .lat-main { padding:10px; }
   }
   @media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } .loader-ring { animation:spin .8s linear infinite !important; } }
 </style>
@@ -270,98 +314,61 @@
     </div>
   </div>
 </div>
-<!-- PORTAL -->
-<div id="portal-screen">
-  <header class="topbar">
-    <div class="topbar-left">
+<!-- APP (menu lateral) -->
+<div id="app-screen">
+  <aside class="lat-side" id="lat-side">
+    <div class="lat-top">
       <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <span class="topbar-label">Portal BI</span>
+      <button type="button" class="lat-tg" id="lat-tg" aria-label="Recolher ou expandir o menu" title="Recolher / expandir" onclick="alternarMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     </div>
-    <div class="search-wrap"></div>
-    <div class="topbar-right">
-      <button type="button" id="btn-hub-portal" class="btn-top" style="display:none" onclick="mostrarHub()">Início</button>
-      <div id="admin-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
-        <button id="btn-dashboards" class="btn-top on" onclick="irParaDashboards()">Dashboards</button>
-        <button id="btn-admin-portal" class="btn-top" onclick="irParaAdmin()">Admin</button>
+    <nav class="lat-nav" id="lat-nav" aria-label="Menu principal"></nav>
+    <div class="lat-foot">
+      <button type="button" class="lat-it" title="Claro / Escuro" onclick="alternarTema()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg><span class="lbl">Claro / Escuro</span></button>
+      <div class="lat-user"><span class="avatar" id="user-avatar"></span><div><strong id="display-user"></strong><small id="user-role"></small></div></div>
+      <button type="button" class="lat-it" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg><span class="lbl">Sair</span></button>
+    </div>
+  </aside>
+  <main class="lat-main">
+    <div class="lat-bar">
+      <button type="button" class="lat-burger" aria-label="Abrir menu" onclick="alternarMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <h2 id="lat-title"></h2><span id="lat-sub"></span>
+    </div>
+    <section class="view" id="view-home">
+      <div class="hubwrap">
+        <div style="text-align:center">
+          <div class="login-greeting" id="hub-greeting"></div>
+          <h1 style="font-size:28px;font-weight:800;color:var(--head);margin:0 0 6px" id="hub-title"></h1>
+          <p style="color:var(--muted);font-size:14px;margin:0">Para onde você quer ir?</p>
+        </div>
+        <div class="hubgrid" id="hub-cards"></div>
       </div>
-      <button type="button" class="btn-top" onclick="alternarTema()">Claro / Escuro</button>
-      <div class="user-badge"><span class="avatar" id="user-avatar"></span><strong id="display-user"></strong></div>
-      <button type="button" class="btn-logout" aria-label="Sair" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg></button>
-    </div>
-  </header>
-  <div class="nav-wrap">
-    <button type="button" class="nav-arrow" id="nav-prev" aria-label="Rolar abas para a esquerda" onclick="rolarAbas(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div class="nav-bar" id="nav-bar"></div>
-    <button type="button" class="nav-arrow" id="nav-next" aria-label="Rolar abas para a direita" onclick="rolarAbas(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-  </div>
-  <div class="report-wrap">
-    <div class="iframe-wrapper">
-      <div class="iframe-loader" id="iframe-loader">
-        <div class="loader-ring"></div>
-        <div class="loader-text">Carregando dashboard...</div>
+    </section>
+    <section class="view" id="view-dash">
+      <div class="report-wrap">
+        <div class="iframe-wrapper">
+          <div class="iframe-loader" id="iframe-loader">
+            <div class="loader-ring"></div>
+            <div class="loader-text">Carregando dashboard...</div>
+          </div>
+          <iframe id="report-iframe" allowfullscreen></iframe>
+        </div>
       </div>
-      <iframe id="report-iframe" allowfullscreen></iframe>
-    </div>
-  </div>
-</div>
-<!-- HUB -->
-<div id="hub-screen">
-  <header class="topbar">
-    <div class="topbar-left">
-      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <span class="topbar-label">Portal MCPack</span>
-    </div>
-    <div class="topbar-right">
-      <button type="button" class="btn-top" onclick="alternarTema()">Claro / Escuro</button>
-      <div class="user-badge"><span class="avatar" id="hub-avatar"></span><strong id="hub-user"></strong></div>
-      <button type="button" class="btn-logout" aria-label="Sair" title="Sair" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg></button>
-    </div>
-  </header>
-  <div class="hubwrap">
-    <div style="text-align:center">
-      <div class="login-greeting" id="hub-greeting"></div>
-      <h1 style="font-size:28px;font-weight:800;color:var(--head);margin:0 0 6px" id="hub-title"></h1>
-      <p style="color:var(--muted);font-size:14px;margin:0">Para onde você quer ir?</p>
-    </div>
-    <div class="hubgrid" id="hub-cards"></div>
-  </div>
-</div>
-<!-- RH -->
-<div id="rh-screen">
-  <header class="topbar">
-    <div class="topbar-left">
-      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <span class="topbar-label" id="rh-label">Portal do Colaborador</span>
-    </div>
-    <div class="topbar-right">
-      <button type="button" class="btn-top" id="btn-rh-voltar" onclick="rhVoltar()">Voltar ao Portal</button>
-    </div>
-  </header>
-  <div class="nav-wrap"><div class="nav-bar" id="rh-nav"></div></div>
-  <div class="rh-body" id="rh-content"></div>
-</div>
-<!-- ADMIN -->
-<div id="admin-screen">
-  <header class="topbar">
-    <div class="topbar-left">
-      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
-      <span class="topbar-label">Painel administrativo</span>
-    </div>
-    <div class="topbar-right">
-      <button type="button" class="btn-top" onclick="adminLogout()">Voltar ao Portal</button>
-    </div>
-  </header>
-  <div class="admin-body">
-    <div class="admin-card">
-      <div class="admin-card-h">Usuários cadastrados <button class="btn-add" onclick="abrirModalAdd()">+ Novo usuário</button></div>
-      <div class="table-scroll">
-        <table class="admin-table">
-          <thead><tr><th>Usuário</th><th>Status</th><th>Páginas liberadas</th><th>Ações</th></tr></thead>
-          <tbody id="users-tbody"></tbody>
-        </table>
+    </section>
+    <section class="view" id="view-rh"><div class="rh-body" id="rh-content"></div></section>
+    <section class="view" id="view-admin">
+      <div class="admin-body">
+        <div class="admin-card">
+          <div class="admin-card-h">Usuários cadastrados <button class="btn-add" onclick="abrirModalAdd()">+ Novo usuário</button></div>
+          <div class="table-scroll">
+            <table class="admin-table">
+              <thead><tr><th>Usuário</th><th>Status</th><th>Páginas liberadas</th><th>Ações</th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 </div>
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay">
@@ -491,50 +498,17 @@ function iniciarPortal(paginaInicial) {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("display-user").textContent = currentUser;
   document.getElementById("user-avatar").textContent = (currentUser || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("");
-  const adminBtns = document.getElementById("admin-mode-btns");
-  if (adminBtns) adminBtns.style.display = "none";
-  const nav = document.getElementById("nav-bar");
-  nav.innerHTML = "";
-  // Abas em ordem alfabética (só na exibição; a página inicial padrão continua sendo a primeira da lista original)
-  [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" })).forEach(pg => {
-    const btn = document.createElement("button");
-    btn.className = "nav-tab";
-    btn.textContent = pg.label;
-    btn.dataset.id = pg.key;
-    btn.onclick = () => abrirPagina(pg.key);
-    nav.appendChild(btn);
-  });
-  nav.scrollLeft = 0;
   const target = paginaInicial && currentPages.find(p => p.key === paginaInicial)
     ? paginaInicial
     : (currentPages[0] ? currentPages[0].key : null);
-  rhDetectar().then(() => decidirEntrada(target));
+  rhDetectar().then(() => {
+    document.getElementById("user-role").textContent = isAdmin() ? "Administrador" : (rhNome || "");
+    construirMenu();
+    try { if (window.innerWidth > 820 && localStorage.getItem("mcpack_menu_mini") === "1") document.getElementById("app-screen").classList.add("mini"); } catch (e) {}
+    document.getElementById("app-screen").style.display = "flex";
+    decidirEntrada(target);
+  });
 }
-// ── Abas: setas, busca e atalho Ctrl+K ──
-function rolarAbas(dir) {
-  const nav = document.getElementById("nav-bar");
-  nav.scrollBy({ left: dir * Math.max(200, nav.clientWidth * 0.6), behavior: "smooth" });
-}
-// Rola a barra de abas (só horizontalmente) para deixar a aba ativa visível; repete após carregar a fonte
-function centralizarAbaAtiva() {
-  const nav = document.getElementById("nav-bar");
-  const ir = () => {
-    const ativa = nav.querySelector(".nav-tab.active");
-    if (!ativa) return;
-    const n = nav.getBoundingClientRect(), t = ativa.getBoundingClientRect();
-    nav.scrollTo({ left: nav.scrollLeft + (t.left - n.left) - (n.width - t.width) / 2, behavior: "auto" });
-    atualizarSetas();
-  };
-  requestAnimationFrame(ir);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ir);
-}
-function atualizarSetas() {
-  const nav = document.getElementById("nav-bar");
-  document.getElementById("nav-prev").disabled = nav.scrollLeft <= 2;
-  document.getElementById("nav-next").disabled = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
-}
-document.getElementById("nav-bar").addEventListener("scroll", atualizarSetas);
-window.addEventListener("resize", atualizarSetas);
 function isAdmin() {
   if (!currentToken) return false;
   try {
@@ -542,18 +516,18 @@ function isAdmin() {
     return payload.is_admin === true;
   } catch { return false; }
 }
+let paginaAtual = null;
 function abrirPagina(key) {
   const pg = currentPages.find(p => p.key === key);
   if (!pg) return;
-  localStorage.setItem("mcpack_page", key);
-  trackPage(pg.label, currentUser);
-  document.querySelectorAll(".nav-tab").forEach(b => {
-    const on = b.dataset.id === key;
-    b.classList.toggle("active", on);
-  });
-  centralizarAbaAtiva();
+  mostrarView("dash", pg.label, "Dashboards");
+  marcarAtivo("dash:" + key);
   const loader = document.getElementById("iframe-loader");
   const iframe = document.getElementById("report-iframe");
+  if (paginaAtual === key && iframe.getAttribute("src")) return;
+  paginaAtual = key;
+  localStorage.setItem("mcpack_page", key);
+  trackPage(pg.label, currentUser);
   loader.style.opacity = "1"; loader.style.display = "flex";
   // Microfone (ditado por voz) só para o chat do agente; os demais iframes não recebem a permissão
   let isAgent = false;
@@ -571,10 +545,10 @@ function doLogout() {
   localStorage.removeItem("mcpack_token");
   localStorage.removeItem("mcpack_page");
   currentToken = null; currentUser = null; currentPages = [];
+  paginaAtual = null;
   document.getElementById("report-iframe").src = "";
-  document.getElementById("portal-screen").style.display = "none";
-  document.getElementById("admin-screen").style.display = "none";
-  esconderTelas();
+  document.getElementById("app-screen").style.display = "none";
+  document.getElementById("app-screen").classList.remove("open");
   rhAreas = []; rhNome = null; hubTarget = null;
   document.getElementById("login-screen").style.display = "flex";
   const savedUser = localStorage.getItem("mcpack_remember_user");
@@ -607,13 +581,25 @@ async function rhDetectar() {
   } catch (e) { rhAreas = []; }
 }
 const RH_ABAS = [
-  { key: "meus", label: "Meus documentos", area: "colaborador", modo: "colab" },
-  { key: "dados", label: "Meus dados", area: "colaborador", modo: "colab" },
-  { key: "pessoas", label: "Pessoas", area: "rh_pessoas", modo: "rh" },
-  { key: "docs", label: "Documentos", area: "rh_documentos", modo: "rh" },
-  { key: "consolidado", label: "Consolidado", area: "rh_consolidado", modo: "rh" }
+  { key: "meus", label: "Meus documentos", area: "colaborador", modo: "colab", icone: "doc" },
+  { key: "dados", label: "Meus dados", area: "colaborador", modo: "colab", icone: "id" },
+  { key: "pessoas", label: "Pessoas", area: "rh_pessoas", modo: "rh", icone: "people" },
+  { key: "docs", label: "Documentos", area: "rh_documentos", modo: "rh", icone: "up" },
+  { key: "consolidado", label: "Consolidado", area: "rh_consolidado", modo: "rh", icone: "list" }
 ];
-// ── Tela de escolha (hub) ──
+// ── Shell: menu lateral e views ──
+const ICONES = {
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>',
+  doc: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/>',
+  id: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M14 10h4M14 14h4M6 16c.5-1.5 5.5-1.5 6 0"/>',
+  people: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  up: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>'
+};
+function svgIcone(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONES[n] || "") + '</svg>'; }
 function entradasDisponiveis() {
   const e = [];
   if (rhAreas.includes("colaborador")) e.push("colab");
@@ -622,79 +608,89 @@ function entradasDisponiveis() {
   if (isAdmin()) e.push("admin");
   return e;
 }
-function esconderTelas() {
-  ["login-screen", "portal-screen", "admin-screen", "rh-screen", "hub-screen"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = "none"; });
+function construirMenu() {
+  const nav = document.getElementById("lat-nav");
+  nav.innerHTML = "";
+  const sec = t => { const d = document.createElement("div"); d.className = "lat-sec"; d.textContent = t; nav.appendChild(d); };
+  const item = (k, label, icone, sub, fn) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "lat-it" + (sub ? " sub" : ""); b.dataset.k = k; b.title = label;
+    b.innerHTML = svgIcone(icone) + '<span class="lbl"></span>';
+    b.querySelector(".lbl").textContent = label;
+    b.onclick = () => { fecharMenuMobile(); fn(); };
+    nav.appendChild(b);
+  };
+  if (entradasDisponiveis().length >= 2) item("home", "Início", "home", false, mostrarHub);
+  const abas = m => RH_ABAS.filter(a => a.modo === m && rhAreas.includes(a.area));
+  if (abas("colab").length) { sec("Portal do Colaborador"); abas("colab").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
+  if (abas("rh").length) { sec("Área do RH"); abas("rh").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
+  if (currentPages.length) {
+    sec("Dashboards");
+    [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }))
+      .forEach(pg => item("dash:" + pg.key, pg.label, "chart", true, () => abrirPagina(pg.key)));
+  }
+  if (isAdmin()) { sec("Administração"); item("admin", "Usuários e acessos", "shield", false, irParaAdmin); }
 }
+function marcarAtivo(k) {
+  document.querySelectorAll("#lat-nav .lat-it").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+}
+function mostrarView(nome, titulo, sub) {
+  document.querySelectorAll("#app-screen .view").forEach(v => v.classList.toggle("on", v.id === "view-" + nome));
+  document.getElementById("lat-title").textContent = titulo || "";
+  document.getElementById("lat-sub").textContent = sub || "";
+}
+function alternarMenu() {
+  const app = document.getElementById("app-screen");
+  if (window.innerWidth <= 820) { app.classList.toggle("open"); return; }
+  const mini = app.classList.toggle("mini");
+  try { localStorage.setItem("mcpack_menu_mini", mini ? "1" : "0"); } catch (e) {}
+}
+function fecharMenuMobile() { document.getElementById("app-screen").classList.remove("open"); }
 function decidirEntrada(target) {
   hubTarget = target;
   const ent = entradasDisponiveis();
-  const hubOn = ent.length >= 2;
-  const bp = document.getElementById("btn-hub-portal");
-  if (bp) bp.style.display = hubOn ? "inline-flex" : "none";
-  if (hubOn) return mostrarHub();
+  if (ent.length >= 2) return mostrarHub();
   if (ent[0] === "colab") return irParaRH("colab");
   if (ent[0] === "rh") return irParaRH("rh");
+  if (ent[0] === "admin") return irParaAdmin();
   entrarDashboards();
 }
 function entrarDashboards() {
-  esconderTelas();
-  document.getElementById("portal-screen").style.display = "flex";
   const t = hubTarget && currentPages.find(p => p.key === hubTarget) ? hubTarget : (currentPages[0] ? currentPages[0].key : null);
-  const ifr = document.getElementById("report-iframe");
-  if (t && !ifr.getAttribute("src")) abrirPagina(t);
-  atualizarSetas();
+  if (t) abrirPagina(t);
 }
 function mostrarHub() {
-  esconderTelas();
+  mostrarView("home", "Início", "");
+  marcarAtivo("home");
   const h = new Date().getHours();
   document.getElementById("hub-greeting").textContent = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   const nomeCurto = rhNome ? rhNome.split(" ")[0] : currentUser;
   document.getElementById("hub-title").textContent = "Olá, " + nomeCurto;
-  document.getElementById("hub-user").textContent = currentUser;
-  document.getElementById("hub-avatar").textContent = (currentUser || "?").split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("");
   const defs = {
-    colab: { t: "Portal do Colaborador", d: "Holerites, documentos e dados cadastrais.", svg: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>', fn: "irParaRH('colab')" },
-    rh: { t: "Área do RH", d: "Cadastro de pessoas, documentos e consolidado.", svg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>', fn: "irParaRH('rh')" },
-    admin: { t: "Administração", d: "Usuários, acessos e páginas liberadas.", svg: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>', fn: "irParaAdmin()" },
-    dash: { t: "Dashboards", d: "Indicadores comerciais, financeiros e de operação.", svg: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', fn: "entrarDashboards()" }
+    colab: { t: "Portal do Colaborador", d: "Holerites, documentos e dados cadastrais.", i: "user", fn: "irParaRH('colab')" },
+    rh: { t: "Área do RH", d: "Cadastro de pessoas, documentos e consolidado.", i: "people", fn: "irParaRH('rh')" },
+    admin: { t: "Administração", d: "Usuários, acessos e páginas liberadas.", i: "shield", fn: "irParaAdmin()" },
+    dash: { t: "Dashboards", d: "Indicadores comerciais, financeiros e de operação.", i: "chart", fn: "entrarDashboards()" }
   };
   document.getElementById("hub-cards").innerHTML = entradasDisponiveis().map(k => {
     const d = defs[k];
-    return '<button class="hubcard" onclick="' + d.fn + '"><span class="hubic"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' + d.svg + '</svg></span><h3>' + d.t + '</h3><p>' + d.d + '</p><span class="hubgo">Abrir →</span></button>';
+    return '<button class="hubcard" onclick="' + d.fn + '"><span class="hubic">' + svgIcone(d.i).replace("<svg ", '<svg width="30" height="30" ') + '</span><h3>' + d.t + '</h3><p>' + d.d + '</p><span class="hubgo">Abrir →</span></button>';
   }).join("");
-  document.getElementById("hub-screen").style.display = "flex";
-}
-function rhVoltar() {
-  if (entradasDisponiveis().length >= 2) return mostrarHub();
-  if (currentPages.length) return entrarDashboards();
 }
 function rhFmtData(v) { if (!v) return "—"; const d = new Date(v.length === 10 ? v + "T00:00:00" : v); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR"); }
 function rhTipoLabel(k) { const t = rhTipos.find(x => x.key === k); return t ? t.label : k; }
 async function irParaRH(modo) {
-  esconderTelas();
-  document.getElementById("rh-screen").style.display = "flex";
-  document.getElementById("rh-label").textContent = modo === "rh" ? "Portal do Colaborador · RH" : "Portal do Colaborador";
-  const vb = document.getElementById("btn-rh-voltar");
-  const ent = entradasDisponiveis();
-  if (ent.length >= 2) { vb.style.display = "inline-flex"; vb.textContent = "Início"; }
-  else if (currentPages.length) { vb.style.display = "inline-flex"; vb.textContent = "Voltar ao Portal"; }
-  else vb.style.display = "none";
-  if (!rhTipos.length) { try { rhTipos = (await rhCall("tipos")).tipos; } catch (e) {} }
-  const nav = document.getElementById("rh-nav");
-  nav.innerHTML = "";
-  const abas = RH_ABAS.filter(a => a.modo === modo && rhAreas.includes(a.area));
-  abas.forEach(a => {
-    const b = document.createElement("button");
-    b.className = "nav-tab"; b.textContent = a.label; b.dataset.id = a.key;
-    b.onclick = () => rhAbrirAba(a.key);
-    nav.appendChild(b);
-  });
-  if (abas.length) rhAbrirAba(abas[0].key);
+  const a = RH_ABAS.find(x => x.modo === modo && rhAreas.includes(x.area));
+  if (a) rhAbrirAba(a.key);
 }
-function rhAbrirAba(key) {
-  document.querySelectorAll("#rh-nav .nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === key));
+async function rhAbrirAba(key) {
+  const a = RH_ABAS.find(x => x.key === key);
+  if (!a) return;
+  mostrarView("rh", a.label, a.modo === "rh" ? "Área do RH" : "Portal do Colaborador");
+  marcarAtivo("rh:" + key);
   const c = document.getElementById("rh-content");
   c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
+  if (!rhTipos.length) { try { rhTipos = (await rhCall("tipos")).tipos; } catch (e) {} }
   const fn = { meus: rhRenderMeus, dados: rhRenderDados, pessoas: rhRenderPessoas, docs: rhRenderDocs, consolidado: rhRenderConsolidado }[key];
   fn(c).catch(e => { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; });
 }
@@ -748,21 +744,11 @@ async function rhCarregarConsolidado() {
   } catch (e) { box.innerHTML = '<div class="rh-vazio">' + esc(e.message) + '</div>'; }
 }
 // ── Admin ──
-function irParaDashboards() {
-  esconderTelas();
-  document.getElementById("portal-screen").style.display = "flex";
-  document.getElementById("btn-dashboards").classList.add("on");
-  document.getElementById("btn-admin-portal").classList.remove("on");
-  atualizarSetas();
-}
 async function irParaAdmin() {
-  esconderTelas();
-  document.getElementById("admin-screen").style.display = "flex";
-  document.getElementById("btn-admin-portal").classList.add("on");
-  document.getElementById("btn-dashboards").classList.remove("on");
+  mostrarView("admin", "Usuários e acessos", "Administração");
+  marcarAtivo("admin");
   await renderAdminTable();
 }
-function adminLogout() { if (entradasDisponiveis().length >= 2) mostrarHub(); else irParaDashboards(); }
 async function renderAdminTable() {
   const tbody = document.getElementById("users-tbody");
   tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;color:var(--muted);padding:20px'>Carregando...</td></tr>";
@@ -953,7 +939,7 @@ function trackPage(pageName, username) {
 // ── Auto refresh do dashboard (30 min) — não recarrega abas de agente (tipo html) ──
 setInterval(() => {
   if (!currentToken) return;
-  if (document.getElementById("portal-screen").style.display !== "flex") return;
+  if (!document.getElementById("view-dash").classList.contains("on")) return;
   const pg = currentPages.find(p => p.key === localStorage.getItem("mcpack_page"));
   if (!pg || pg.tipo === "html") return;
   const iframe = document.getElementById("report-iframe");
