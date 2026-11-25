@@ -123,6 +123,13 @@
   #report-iframe { width:100%; height:100%; border:none; display:block; }
 
   /* ===== ADMIN ===== */
+  #rh-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; background:var(--page-bg); }
+  .rh-body { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:14px; }
+  .rh-filtros { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:12px; }
+  .rh-filtros label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .rh-filtros input, .rh-filtros select { height:40px; border:1px solid var(--input-bd); border-radius:10px; padding:0 12px; background:var(--white); color:var(--text); font-size:13px; font-family:inherit; }
+  .rh-vazio { padding:28px; text-align:center; color:var(--muted); font-size:14px; }
+  .rh-dropz { border:2px dashed var(--navy); background:var(--bg2); border-radius:14px; padding:28px; text-align:center; color:var(--head); opacity:.75; }
   #admin-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; padding:10px 14px 12px; gap:10px; background:var(--page-bg); }
   .admin-body { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:16px; }
   .admin-card { background:var(--white); border:1px solid var(--border); border-top:4px solid var(--navy); border-radius:18px; padding:22px; box-shadow:var(--card-shadow); }
@@ -270,6 +277,9 @@
       </div>
     </div>
     <div class="topbar-right">
+      <div id="rh-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
+        <button id="btn-rh" class="btn-top" onclick="irParaRH()">RH</button>
+      </div>
       <div id="admin-mode-btns" style="display:none;gap:6px;align-items:center;flex-direction:row">
         <button id="btn-dashboards" class="btn-top on" onclick="irParaDashboards()">Dashboards</button>
         <button id="btn-admin-portal" class="btn-top" onclick="irParaAdmin()">Admin</button>
@@ -293,6 +303,20 @@
       <iframe id="report-iframe" allowfullscreen></iframe>
     </div>
   </div>
+</div>
+<!-- RH -->
+<div id="rh-screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="logo_mcpack_branco.png" alt="MCPack Equipamentos">
+      <span class="topbar-label">Portal do Colaborador · RH</span>
+    </div>
+    <div class="topbar-right">
+      <button type="button" class="btn-top" onclick="irParaDashboards()">Voltar ao Portal</button>
+    </div>
+  </header>
+  <div class="nav-wrap"><div class="nav-bar" id="rh-nav"></div></div>
+  <div class="rh-body" id="rh-content"></div>
 </div>
 <!-- ADMIN -->
 <div id="admin-screen">
@@ -449,6 +473,7 @@ function iniciarPortal(paginaInicial) {
   document.getElementById("nav-search").value = "";
   const adminBtns = document.getElementById("admin-mode-btns");
   if (adminBtns) adminBtns.style.display = isAdmin() ? "flex" : "none";
+  rhDetectar();
   const nav = document.getElementById("nav-bar");
   nav.innerHTML = "";
   // Abas em ordem alfabética (só na exibição; a página inicial padrão continua sendo a primeira da lista original)
@@ -549,14 +574,114 @@ function doLogout() {
   document.getElementById("report-iframe").src = "";
   document.getElementById("portal-screen").style.display = "none";
   document.getElementById("admin-screen").style.display = "none";
+  document.getElementById("rh-screen").style.display = "none";
   document.getElementById("login-screen").style.display = "flex";
   const savedUser = localStorage.getItem("mcpack_remember_user");
   document.getElementById("input-user").value = savedUser || "";
   document.getElementById("input-pass").value = "";
   if (savedUser) setTimeout(() => document.getElementById("input-pass").focus(), 100);
 }
+// ── Área do RH (rh-api) ──
+const RH_URL = "https://igsoruvlyvydocdfatde.supabase.co/functions/v1/rh-api";
+let rhAreas = [];
+let rhTipos = [];
+async function rhCall(action, extra) {
+  const resp = await fetch(RH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + currentToken },
+    body: JSON.stringify(Object.assign({ action }, extra || {}))
+  });
+  const data = await resp.json();
+  if (!resp.ok || !data.ok) throw new Error(data.error || "Erro");
+  return data;
+}
+async function rhDetectar() {
+  rhAreas = [];
+  const box = document.getElementById("rh-mode-btns");
+  if (box) box.style.display = "none";
+  try {
+    const d = await rhCall("me");
+    rhAreas = d.areas || [];
+  } catch (e) { rhAreas = []; }
+  if (box && rhAreas.length) box.style.display = "flex";
+}
+const RH_ABAS = [
+  { key: "meus", label: "Meus documentos", area: "colaborador" },
+  { key: "pessoas", label: "Pessoas", area: "rh_pessoas" },
+  { key: "docs", label: "Documentos", area: "rh_documentos" },
+  { key: "consolidado", label: "Consolidado", area: "rh_consolidado" }
+];
+function rhFmtData(v) { if (!v) return "—"; const d = new Date(v.length === 10 ? v + "T00:00:00" : v); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR"); }
+function rhTipoLabel(k) { const t = rhTipos.find(x => x.key === k); return t ? t.label : k; }
+async function irParaRH() {
+  document.getElementById("portal-screen").style.display = "none";
+  document.getElementById("admin-screen").style.display = "none";
+  document.getElementById("rh-screen").style.display = "flex";
+  if (!rhTipos.length) { try { rhTipos = (await rhCall("tipos")).tipos; } catch (e) {} }
+  const nav = document.getElementById("rh-nav");
+  nav.innerHTML = "";
+  const abas = RH_ABAS.filter(a => rhAreas.includes(a.area));
+  abas.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "nav-tab"; b.textContent = a.label; b.dataset.id = a.key;
+    b.onclick = () => rhAbrirAba(a.key);
+    nav.appendChild(b);
+  });
+  if (abas.length) rhAbrirAba(abas[0].key);
+}
+function rhAbrirAba(key) {
+  document.querySelectorAll("#rh-nav .nav-tab").forEach(b => b.classList.toggle("active", b.dataset.id === key));
+  const c = document.getElementById("rh-content");
+  c.innerHTML = '<div class="rh-vazio">Carregando…</div>';
+  const fn = { meus: rhRenderMeus, pessoas: rhRenderPessoas, docs: rhRenderDocs, consolidado: rhRenderConsolidado }[key];
+  fn(c).catch(e => { c.innerHTML = '<div class="admin-card"><div class="rh-vazio">' + esc(e.message) + '</div></div>'; });
+}
+async function rhAbrirDoc(id) {
+  const w = window.open("", "_blank");
+  try {
+    const d = await rhCall("documento_url", { id });
+    if (w) w.location = d.url; else window.location = d.url;
+  } catch (e) { if (w) w.close(); alert(e.message); }
+}
+async function rhRenderMeus(c) {
+  const { documentos } = await rhCall("meus_documentos");
+  const linhas = documentos.map(d => '<tr><td><strong>' + esc(d.competencia) + '</strong></td><td>' + esc(rhTipoLabel(d.tipo_key)) + '</td><td>' + rhFmtData(d.publicado_em) + '</td><td>' + (d.visto_em ? "Visto" : '<span class="tag-admin">NOVO</span>') + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir PDF</button></td></tr>').join("");
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Meus documentos</div>' + (linhas
+    ? '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Competência</th><th>Tipo</th><th>Publicado em</th><th>Status</th><th>Ação</th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
+    : '<div class="rh-vazio">Nenhum documento publicado ainda.</div>') + '</div>';
+}
+async function rhRenderPessoas(c) {
+  const { pessoas } = await rhCall("pessoas_list");
+  const linhas = pessoas.map(p => '<tr><td><strong>' + esc(p.matricula || "—") + '</strong></td><td>' + esc(p.name) + '</td><td>' + esc(p.department_name || "—") + '</td><td>' + rhFmtData(p.data_admissao) + (p.data_saida ? " → " + rhFmtData(p.data_saida) : "") + '</td><td><span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Arquivado") + '</span></td><td>' + (p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>') + '</td></tr>').join("");
+  const semMat = pessoas.filter(p => !p.matricula && p.active).length;
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Pessoas <span class="badge-page">' + pessoas.length + ' no Odoo · ' + semMat + ' ativos sem matrícula</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Admissão</th><th>Odoo</th><th>Portal</th></tr></thead><tbody>' + linhas + '</tbody></table></div><p style="margin-top:12px;font-size:12px;color:var(--muted)">Somente leitura por enquanto. Cadastro e edição pelo portal entram na próxima etapa.</p></div>';
+}
+async function rhRenderDocs(c) {
+  const cards = rhTipos.map(t => '<span class="badge-page" title="' + esc(t.periodicidade) + '">' + esc(t.label) + '</span>').join(" ");
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Enviar documentos</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">' + cards + '</div><div class="rh-dropz"><b>Importação por ZIP ou PDFs</b><br><span style="font-size:12px">Em construção: depende do PDF de exemplo para ler a matrícula.</span></div></div>';
+}
+async function rhRenderConsolidado(c) {
+  const opts = '<option value="">Todos</option>' + rhTipos.map(t => '<option value="' + esc(t.key) + '">' + esc(t.label) + '</option>').join("");
+  c.innerHTML = '<div class="admin-card"><div class="admin-card-h">Consolidado de documentos</div><div class="rh-filtros"><div><label>Tipo</label><select id="rh-f-tipo">' + opts + '</select></div><div><label>Competência</label><input id="rh-f-comp" placeholder="2026-11"></div><button class="btn-add" onclick="rhCarregarConsolidado()">Filtrar</button></div><div id="rh-cons-tabela"></div></div>';
+  await rhCarregarConsolidado();
+}
+async function rhCarregarConsolidado() {
+  const box = document.getElementById("rh-cons-tabela");
+  const tipo = document.getElementById("rh-f-tipo").value;
+  const competencia = document.getElementById("rh-f-comp").value.trim();
+  box.innerHTML = '<div class="rh-vazio">Carregando…</div>';
+  try {
+    const { documentos } = await rhCall("documentos_list", { tipo: tipo || undefined, competencia: competencia || undefined });
+    if (!documentos.length) { box.innerHTML = '<div class="rh-vazio">Nenhum documento ainda.</div>'; return; }
+    box.innerHTML = '<div class="table-scroll"><table class="admin-table"><thead><tr><th>Matrícula</th><th>Pessoa</th><th>Tipo</th><th>Competência</th><th>Status</th><th>Visto</th><th>Odoo</th><th></th></tr></thead><tbody>' + documentos.map(d => {
+      const e = d.odoo_hr_employee || {};
+      return '<tr><td>' + esc(e.matricula || d.matricula_lida || "—") + '</td><td>' + esc(e.name || "(sem vínculo)") + '</td><td>' + esc(rhTipoLabel(d.tipo_key)) + '</td><td>' + esc(d.competencia) + '</td><td>' + esc(d.status) + '</td><td>' + (d.visto_em ? rhFmtData(d.visto_em) : "—") + '</td><td>' + esc(d.odoo_status) + '</td><td><button class="btn-edit" onclick="rhAbrirDoc(\'' + d.id + '\')">Abrir</button></td></tr>';
+    }).join("") + '</tbody></table></div>';
+  } catch (e) { box.innerHTML = '<div class="rh-vazio">' + esc(e.message) + '</div>'; }
+}
 // ── Admin ──
 function irParaDashboards() {
+  document.getElementById("rh-screen").style.display = "none";
   document.getElementById("admin-screen").style.display = "none";
   document.getElementById("portal-screen").style.display = "flex";
   document.getElementById("btn-dashboards").classList.add("on");
@@ -564,6 +689,7 @@ function irParaDashboards() {
   atualizarSetas();
 }
 async function irParaAdmin() {
+  document.getElementById("rh-screen").style.display = "none";
   document.getElementById("portal-screen").style.display = "none";
   document.getElementById("admin-screen").style.display = "flex";
   document.getElementById("btn-admin-portal").classList.add("on");
