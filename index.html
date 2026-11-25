@@ -96,8 +96,18 @@
   .lat-tg svg { width:20px; height:20px; transition:transform .2s; }
   #app-screen.mini .lat-tg svg { transform:rotate(180deg); }
   .lat-nav { flex:1; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:2px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.3) transparent; }
-  .lat-sec { font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.6); padding:14px 12px 6px; white-space:nowrap; }
-  #app-screen.mini .lat-sec { height:1px; padding:0; margin:10px 14px; background:rgba(255,255,255,.2); font-size:0; overflow:hidden; }
+  .lat-sec { display:flex; align-items:center; gap:12px; width:100%; margin-top:10px; padding:0 12px; min-height:34px; border:0; background:transparent; border-radius:10px; font-family:inherit; font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.72); cursor:pointer; white-space:nowrap; text-align:left; }
+  .lat-sec:hover { background:rgba(255,255,255,.1); color:#fff; }
+  .lat-sec > svg { width:18px; height:18px; flex:0 0 18px; }
+  .lat-sec .lbl { flex:1; overflow:hidden; text-overflow:ellipsis; }
+  .lat-sec .chv { display:flex; }
+  .lat-sec .chv svg { width:14px; height:14px; transition:transform .18s; }
+  .lat-grp.closed .chv svg { transform:rotate(-90deg); }
+  .lat-grp.closed .lat-items { display:none; }
+  .lat-items { display:flex; flex-direction:column; gap:2px; }
+  #app-screen.mini .lat-sec { justify-content:center; padding:0; margin-top:8px; }
+  #app-screen.mini .lat-sec .chv { display:none; }
+  #app-screen.mini .lat-grp { border-top:1px solid rgba(255,255,255,.15); margin-top:6px; }
   .lat-it { display:flex; align-items:center; gap:12px; min-height:42px; padding:0 12px; border-radius:12px; color:rgba(255,255,255,.9); font-size:13.5px; font-weight:600; cursor:pointer; border:0; background:transparent; width:100%; text-align:left; font-family:inherit; white-space:nowrap; }
   .lat-it svg { width:20px; height:20px; flex:0 0 20px; }
   .lat-it:hover { background:rgba(255,255,255,.14); }
@@ -164,7 +174,7 @@
   /* ===== ADMIN ===== */
   #hub-screen { display:none; flex-direction:column; height:100vh; overflow:hidden; padding:10px 14px 12px; gap:10px; background:var(--page-bg); }
   .hubwrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:24px; overflow:auto; }
-  .hubgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; width:100%; max-width:1000px; }
+  .hubgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px; width:100%; max-width:1240px; }
   .hubcard { text-align:left; background:var(--white); border:1px solid var(--border); border-top:4px solid var(--navy); border-radius:18px; padding:28px; display:flex; flex-direction:column; gap:10px; box-shadow:var(--card-shadow); color:var(--text); cursor:pointer; min-height:210px; font-family:inherit; transition:transform .15s, border-color .15s; }
   .hubcard:hover { border-color:var(--navy); transform:translateY(-2px); }
   .hubic { width:54px; height:54px; border-radius:14px; background:var(--bg2); color:var(--navy); display:grid; place-items:center; }
@@ -597,7 +607,8 @@ const ICONES = {
   up: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
-  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>'
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
+  chev: '<path d="M6 9l6 6 6-6"/>'
 };
 function svgIcone(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONES[n] || "") + '</svg>'; }
 function entradasDisponiveis() {
@@ -608,31 +619,54 @@ function entradasDisponiveis() {
   if (isAdmin()) e.push("admin");
   return e;
 }
+function gruposSalvos() { try { return JSON.parse(localStorage.getItem("mcpack_menu_grupos") || "{}"); } catch (e) { return {}; } }
+function salvarGrupo(g, fechado) { const o = gruposSalvos(); o[g] = fechado; try { localStorage.setItem("mcpack_menu_grupos", JSON.stringify(o)); } catch (e) {} }
 function construirMenu() {
   const nav = document.getElementById("lat-nav");
   nav.innerHTML = "";
-  const sec = t => { const d = document.createElement("div"); d.className = "lat-sec"; d.textContent = t; nav.appendChild(d); };
+  const abas = m => RH_ABAS.filter(a => a.modo === m && rhAreas.includes(a.area));
+  const nGrupos = [abas("colab").length, abas("rh").length, currentPages.length, isAdmin() ? 1 : 0].filter(Boolean).length;
+  let box = nav;
+  const grupo = (g, titulo, icone) => {
+    const salvos = gruposSalvos();
+    const fechado = g in salvos ? salvos[g] : (nGrupos > 1 && g === "dash");
+    const w = document.createElement("div");
+    w.className = "lat-grp" + (fechado ? " closed" : ""); w.dataset.g = g;
+    const h = document.createElement("button");
+    h.type = "button"; h.className = "lat-sec"; h.title = titulo;
+    h.setAttribute("aria-expanded", String(!fechado));
+    h.innerHTML = svgIcone(icone) + '<span class="lbl"></span><span class="chv">' + svgIcone("chev") + '</span>';
+    h.querySelector(".lbl").textContent = titulo;
+    h.onclick = () => { const c = w.classList.toggle("closed"); salvarGrupo(g, c); h.setAttribute("aria-expanded", String(!c)); };
+    const items = document.createElement("div");
+    items.className = "lat-items";
+    w.appendChild(h); w.appendChild(items); nav.appendChild(w);
+    box = items;
+  };
   const item = (k, label, icone, sub, fn) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "lat-it" + (sub ? " sub" : ""); b.dataset.k = k; b.title = label;
     b.innerHTML = svgIcone(icone) + '<span class="lbl"></span>';
     b.querySelector(".lbl").textContent = label;
     b.onclick = () => { fecharMenuMobile(); fn(); };
-    nav.appendChild(b);
+    box.appendChild(b);
   };
   if (entradasDisponiveis().length >= 2) item("home", "Início", "home", false, mostrarHub);
-  const abas = m => RH_ABAS.filter(a => a.modo === m && rhAreas.includes(a.area));
-  if (abas("colab").length) { sec("Portal do Colaborador"); abas("colab").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
-  if (abas("rh").length) { sec("Área do RH"); abas("rh").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
+  if (abas("colab").length) { grupo("colab", "Portal do Colaborador", "user"); abas("colab").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
+  if (abas("rh").length) { grupo("rh", "Área do RH", "people"); abas("rh").forEach(a => item("rh:" + a.key, a.label, a.icone, false, () => rhAbrirAba(a.key))); }
   if (currentPages.length) {
-    sec("Dashboards");
+    grupo("dash", "Dashboards", "chart");
     [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }))
       .forEach(pg => item("dash:" + pg.key, pg.label, "chart", true, () => abrirPagina(pg.key)));
   }
-  if (isAdmin()) { sec("Administração"); item("admin", "Usuários e acessos", "shield", false, irParaAdmin); }
+  if (isAdmin()) { grupo("admin", "Administração", "shield"); item("admin", "Usuários e acessos", "shield", false, irParaAdmin); }
 }
 function marcarAtivo(k) {
   document.querySelectorAll("#lat-nav .lat-it").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+  const on = document.querySelector("#lat-nav .lat-it.on");
+  const w = on && on.closest(".lat-grp");
+  if (w && w.classList.contains("closed")) { w.classList.remove("closed"); const h = w.querySelector(".lat-sec"); if (h) h.setAttribute("aria-expanded", "true"); }
+  if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest" });
 }
 function mostrarView(nome, titulo, sub) {
   document.querySelectorAll("#app-screen .view").forEach(v => v.classList.toggle("on", v.id === "view-" + nome));
