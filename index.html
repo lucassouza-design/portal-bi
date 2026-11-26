@@ -1713,7 +1713,7 @@ async function rhRenderArtes(c) {
   const {pessoas}=await rhCall("pessoas_list");
   if(!rhAreas.includes("rh_editar") || !rhAreas.includes("rh_pessoas")) return;
   const lista=pessoas.filter(p=>p.active);
-  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><select id="arte-pessoa"></select></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div style="min-width:210px;max-width:100%"><label>Responsáveis substitutos</label><details id="arte-resp" style="position:relative;width:340px;max-width:100%"><summary class="rh-arte-select-trigger" style="cursor:pointer;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);color:var(--text);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px">Selecionar responsáveis</summary><div data-popup style="position:fixed;z-index:9999;box-sizing:border-box;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)"><input type="search" placeholder="Buscar colaborador" aria-label="Buscar colaborador" style="width:100%;margin-bottom:6px"><div data-list style="max-height:210px;overflow:auto"></div></div></details></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
+  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><div style="position:relative"><select id="arte-pessoa" hidden style="display:none"></select><button type="button" id="arte-pessoa-trigger" aria-haspopup="listbox" aria-expanded="false" style="box-sizing:border-box;height:40px;width:280px;max-width:100%;padding:0 12px;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);color:var(--text);font:inherit;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer"><span data-caption style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><span aria-hidden="true" style="flex:none">⌄</span></button><div id="arte-pessoa-popup" hidden style="position:fixed;z-index:9999;box-sizing:border-box;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)"><input type="search" placeholder="Buscar colaborador" aria-label="Buscar colaborador" style="width:100%;margin-bottom:6px"><div role="listbox" data-list style="max-height:210px;overflow:auto"></div></div></div></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div style="min-width:210px;max-width:100%"><label>Responsáveis substitutos</label><details id="arte-resp" style="position:relative;width:340px;max-width:100%"><summary class="rh-arte-select-trigger" style="cursor:pointer;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);color:var(--text);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px">Selecionar responsáveis</summary><div data-popup style="position:fixed;z-index:9999;box-sizing:border-box;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)"><input type="search" placeholder="Buscar colaborador" aria-label="Buscar colaborador" style="width:100%;margin-bottom:6px"><div data-list style="max-height:210px;overflow:auto"></div></div></details></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
   const q=id=>c.querySelector("#arte-"+id), tipo=q("tipo"), sel=q("pessoa"), data=q("data"), cv=q("canvas"), msg=q("msg"), down=q("baixar");
   const local=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>local.find(x=>x.type===k).value;data.value=part("year")+"-"+part("month")+"-"+part("day");
   const dia=p=>p.data_nascimento? p.data_nascimento.slice(8,10)+"/"+p.data_nascimento.slice(5,7):String(p.aniversario||"").slice(0,5);
@@ -1740,6 +1740,34 @@ async function rhRenderArtes(c) {
   document.addEventListener("scroll",posicionarResponsaveis,{capture:true,signal:eventos.signal});
   const observer=new MutationObserver(()=>{if(!dropdown.isConnected){eventos.abort();observer.disconnect()}});observer.observe(c,{childList:true,subtree:true});
   sel.addEventListener("pointerdown",fecharResponsaveis);
+  const pessoaTrigger=q("pessoa-trigger"), pessoaPopup=q("pessoa-popup"), pessoaBusca=pessoaPopup.querySelector("input"), pessoaList=pessoaPopup.querySelector("[data-list]");
+  const normalizarBusca=v=>String(v||"").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  function atualizarPessoa(){pessoaTrigger.querySelector("[data-caption]").textContent=sel.selectedOptions[0]?.textContent||"Selecionar colaborador"}
+  function fecharPessoa(){pessoaPopup.hidden=true;pessoaTrigger.setAttribute("aria-expanded","false")}
+  function posicionarPessoa(){
+    if(pessoaPopup.hidden||!pessoaTrigger.isConnected)return;
+    const r=pessoaTrigger.getBoundingClientRect(),vw=document.documentElement.clientWidth,vh=window.innerHeight,w=Math.min(Math.max(r.width,260),vw-16),abaixo=vh-r.bottom-12,acima=r.top-12,subir=abaixo<180&&acima>abaixo;
+    pessoaPopup.style.width=w+"px";pessoaPopup.style.left=Math.max(8,Math.min(r.left,vw-w-8))+"px";
+    pessoaList.style.maxHeight=Math.max(35,Math.min(220,(subir?acima:abaixo)-62))+"px";
+    pessoaPopup.style.top=subir?"auto":(r.bottom+4)+"px";pessoaPopup.style.bottom=subir?(vh-r.top+4)+"px":"auto";
+  }
+  function renderPessoa(){
+    pessoaList.replaceChildren();const term=normalizarBusca(pessoaBusca.value);
+    for(const o of sel.options){
+      if(!normalizarBusca(o.textContent).includes(term))continue;
+      const btn=document.createElement("button");btn.type="button";btn.setAttribute("role","option");btn.setAttribute("aria-selected",String(o.value===sel.value));btn.textContent=o.textContent;
+      btn.style.cssText="display:block;text-align:left;width:100%;border:0;border-radius:5px;padding:8px;background:"+(o.value===sel.value?"var(--tab-hover)":"transparent")+";color:var(--text);font:inherit;font-size:13px;cursor:pointer";
+      btn.onclick=()=>{sel.value=o.value;fecharPessoa();sel.dispatchEvent(new Event("change"));pessoaTrigger.focus()};pessoaList.append(btn);
+    }
+    if(!pessoaList.childElementCount){const el=document.createElement("span");el.textContent="Nenhum colaborador encontrado";pessoaList.append(el)}
+  }
+  pessoaTrigger.onclick=()=>{if(!pessoaPopup.hidden){fecharPessoa();return}fecharResponsaveis();pessoaBusca.value="";renderPessoa();pessoaPopup.hidden=false;pessoaTrigger.setAttribute("aria-expanded","true");posicionarPessoa();pessoaBusca.focus({preventScroll:true})};
+  pessoaBusca.oninput=renderPessoa;
+  document.addEventListener("pointerdown",e=>{if(!pessoaTrigger.contains(e.target)&&!pessoaPopup.contains(e.target))fecharPessoa()},opt);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!pessoaPopup.hidden){fecharPessoa();pessoaTrigger.focus()}},opt);
+  window.addEventListener("resize",posicionarPessoa,opt);
+  document.addEventListener("scroll",posicionarPessoa,{capture:true,signal:eventos.signal});
+  dropdown.addEventListener("toggle",()=>{if(dropdown.open)fecharPessoa()});
   const grupos=["resp"], escolhas=new Map(grupos.map(k=>[k,new Set()]));
   const invalidar=()=>{down.disabled=true;cv.style.display="none";msg.textContent=""};
   function montarResponsaveis(){
@@ -1763,10 +1791,10 @@ async function rhRenderArtes(c) {
       search.oninput=render;render();atualizar();
     }
   }
-  tipo.onchange=data.onchange=()=>{fecharResponsaveis();refresh();montarResponsaveis();invalidar()};
-  sel.onchange=()=>{fecharResponsaveis();montarResponsaveis();invalidar()};
+  tipo.onchange=data.onchange=()=>{fecharPessoa();fecharResponsaveis();refresh();atualizarPessoa();montarResponsaveis();invalidar()};
+  sel.onchange=()=>{atualizarPessoa();fecharResponsaveis();montarResponsaveis();invalidar()};
   for(const k of ["inicio","fim"])q(k).oninput=invalidar;
-  refresh();montarResponsaveis();
+  refresh();atualizarPessoa();montarResponsaveis();
 
   const image=src=>new Promise((resolve,reject)=>{const im=new Image();im.crossOrigin="anonymous";im.onload=()=>resolve(im);im.onerror=()=>reject(new Error("Não foi possível carregar a imagem."));im.src=src});
   // Modelos oficiais aprovados: arquivos PNG fixos, apenas os campos variáveis são substituídos.
@@ -1778,7 +1806,7 @@ async function rhRenderArtes(c) {
   q("gerar").onclick=async()=>{
     if(gerando)return;
     gerando=true;down.disabled=true;cv.style.display="none";msg.textContent="Gerando…";
-    const controls=[tipo,sel,data,q("inicio"),q("fim"),...grupos.flatMap(k=>[...q(k).querySelectorAll("input")]),q("gerar")];controls.forEach(e=>e.disabled=true);
+    const controls=[tipo,sel,pessoaTrigger,data,q("inicio"),q("fim"),...grupos.flatMap(k=>[...q(k).querySelectorAll("input")]),q("gerar")];controls.forEach(e=>e.disabled=true);
     try{
       if(!rhAreas.includes("rh_editar")||!rhAreas.includes("rh_pessoas"))throw Error("Sem permissão");
       const p=lista.find(x=>String(x.id)===sel.value);if(!p)throw Error("Selecione um colaborador.");
