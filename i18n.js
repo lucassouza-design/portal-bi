@@ -325,7 +325,7 @@
     busy = true;
     try {
       ms.forEach(function (m) {
-        if (m.target && m.target.id === 'lang-btn') return;
+        if (m.target && m.target.closest && m.target.closest('[data-lang-btn]')) return;
         if (m.type === 'childList') m.addedNodes.forEach(walk);
         else if (m.type === 'characterData') trText(m.target);
         else if (m.type === 'attributes') trAttrs(m.target);
@@ -345,27 +345,27 @@
   window.confirm = function (m) { return _confirm.call(window, tr(String(m))); };
 
   var LABEL = { pt: 'Português', en: 'English', es: 'Español' };
-  function paint(btn) {
-    btn.textContent = LANG.toUpperCase();
+  function paintAll() {
     var t = 'Idioma / Language / Idioma: ' + LABEL[LANG];
-    btn.setAttribute('aria-label', t); btn.title = t;
+    document.querySelectorAll('[data-lang-btn]').forEach(function (b) {
+      var c = b.querySelector('.lang-cur'); if (c) c.textContent = LANG.toUpperCase();
+      b.setAttribute('aria-label', t); b.title = t;
+    });
   }
   function setLang(l) {
     LANG = l; try { localStorage.setItem(KEY, l); } catch (e) {}
-    var b = document.getElementById('lang-btn'); if (b) paint(b);
+    paintAll();
     applyAll();
   }
 
+  /* os botões [data-lang-btn] ficam no login e no trilho do menu (junto do Tema) */
   function start() {
-    var css = document.createElement('style');
-    css.textContent = '#lang-btn{position:fixed;top:12px;right:14px;z-index:2147483000;min-width:44px;height:36px;padding:0 12px;border-radius:18px;border:1px solid rgba(20,68,136,.35);background:rgba(255,255,255,.92);color:#144488;font:700 12px/1 Poppins,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;box-shadow:0 2px 10px rgba(14,27,61,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}#lang-btn:hover{background:#fff}#lang-btn:focus-visible{outline:3px solid #B45309;outline-offset:2px}@media (max-width:760px){#lang-btn{top:8px;right:8px;height:34px}}';
-    document.head.appendChild(css);
-    var b = document.createElement('button');
-    b.type = 'button'; b.id = 'lang-btn';
-    paint(b);
-    b.addEventListener('click', function () { setLang(LANGS[(LANGS.indexOf(LANG) + 1) % LANGS.length]); });
-    document.body.appendChild(b);
+    document.addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('[data-lang-btn]');
+      if (b) setLang(LANGS[(LANGS.indexOf(LANG) + 1) % LANGS.length]);
+    });
     obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTR });
+    paintAll();
     applyAll();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
