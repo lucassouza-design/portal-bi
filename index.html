@@ -1713,20 +1713,98 @@ async function rhRenderArtes(c) {
   const {pessoas}=await rhCall("pessoas_list");
   if(!rhAreas.includes("rh_editar") || !rhAreas.includes("rh_pessoas")) return;
   const lista=pessoas.filter(p=>p.active);
-  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><select id="arte-pessoa"></select></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div><label>Responsável substituto</label><input id="arte-sub" maxlength="100"></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
+  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><select id="arte-pessoa"></select></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div><label>Mecânica</label><input id="arte-mec" maxlength="80"></div><div><label>Elétrica</label><input id="arte-ele" maxlength="80"></div><div><label>Programação</label><input id="arte-pro" maxlength="80"></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
   const q=id=>c.querySelector("#arte-"+id), tipo=q("tipo"), sel=q("pessoa"), data=q("data"), cv=q("canvas"), msg=q("msg"), down=q("baixar");
   const local=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>local.find(x=>x.type===k).value;data.value=part("year")+"-"+part("month")+"-"+part("day");
   const dia=p=>p.data_nascimento? p.data_nascimento.slice(8,10)+"/"+p.data_nascimento.slice(5,7):String(p.aniversario||"").slice(0,5);
   const anos=(p,d)=>{if(!p.data_admissao||!d||d<p.data_admissao)return 0;return +d.slice(0,4)-+p.data_admissao.slice(0,4)-(d.slice(5)<p.data_admissao.slice(5,10)?1:0)};
   function refresh(){q("ferias").hidden=tipo.value!=="ferias";q("ferias").style.display=tipo.value==="ferias"?"flex":"none";const d=data.value, dd=d.slice(8,10)+"/"+d.slice(5,7);const matches=lista.filter(p=>tipo.value==="aniv"?dia(p)===dd:tipo.value==="empresa"?p.data_admissao?.slice(5,10)===d.slice(5)&&anos(p,d)>0:false);const ids=new Set(matches.map(p=>p.id));const prev=sel.value;sel.replaceChildren();for(const p of [...matches,...lista.filter(p=>!ids.has(p.id))]){const o=new Option((ids.has(p.id)?"★ ":"")+p.name,String(p.id));sel.add(o)}if(prev&&[...sel.options].some(o=>o.value===prev))sel.value=prev;q("eventos").textContent=tipo.value==="ferias"?"Informe o período e a cobertura.":matches.length+" comemoração(ões) na data selecionada.";down.disabled=true;cv.style.display="none"}
-  tipo.onchange=data.onchange=refresh;sel.onchange=()=>{down.disabled=true;cv.style.display="none"};for(const k of ["inicio","fim","sub"])q(k).oninput=()=>{down.disabled=true;cv.style.display="none"};refresh();
+  tipo.onchange=data.onchange=refresh;sel.onchange=()=>{down.disabled=true;cv.style.display="none"};for(const k of ["inicio","fim","mec","ele","pro"])q(k).oninput=()=>{down.disabled=true;cv.style.display="none"};refresh();
   const image=src=>new Promise((resolve,reject)=>{const im=new Image();im.crossOrigin="anonymous";im.onload=()=>resolve(im);im.onerror=()=>reject(new Error("Não foi possível carregar a imagem."));im.src=src});
-  q("gerar").onclick=async()=>{down.disabled=true;msg.textContent="Gerando…";try{if(!rhAreas.includes("rh_editar")||!rhAreas.includes("rh_pessoas"))throw Error("Sem permissão");const p=lista.find(x=>String(x.id)===sel.value);if(!p)throw Error("Selecione um colaborador.");const t=tipo.value,d=data.value;if(!d)throw Error("Informe a data.");const n=anos(p,d);if(t==="empresa"&&!n)throw Error("O colaborador ainda não completou um ano.");const ini=q("inicio").value,fim=q("fim").value,sub=q("sub").value.trim();if(t==="ferias"&&(!ini||!fim||fim<ini||!sub))throw Error("Informe o período válido e o substituto.");const g=cv.getContext("2d");g.fillStyle="#003B7A";g.fillRect(0,0,1080,1350);g.fillStyle="#49609D";g.beginPath();g.moveTo(1080,460);g.lineTo(1080,1350);g.lineTo(400,1350);g.closePath();g.fill();const logo=await image("logo_mcpack_horizontal_branco.png");g.drawImage(logo,75,75,300,300*logo.height/logo.width);g.fillStyle="#F1C979";g.fillRect(75,215,100,8);
-  function line(v,x,y,size,color="#FFFFFF",weight=600,max=930){g.fillStyle=color;g.font=weight+" "+size+"px Poppins, sans-serif";g.fillText(String(v||""),x,y,max)}
-  line(t==="aniv"?"Feliz aniversário!":t==="empresa"?"Tempo de empresa":"Comunicado de férias",75,320,67);line(t==="aniv"?"Celebramos você!":t==="empresa"?"Obrigado por fazer parte da nossa história.":"Vacaciones · Comunicación interna",75,385,32,"#FFFFFF",400);
-  if(t!=="ferias"){if(p.foto_url){const im=await image(p.foto_url);const k=Math.min(im.width,im.height);g.save();g.beginPath();g.arc(540,700,255,0,Math.PI*2);g.clip();g.drawImage(im,(im.width-k)/2,(im.height-k)/2,k,k,285,445,510,510);g.restore()}else{g.fillStyle="#2583C6";g.beginPath();g.arc(540,700,255,0,Math.PI*2);g.fill();line(iniciaisDe(p.name),430,745,100)}line(p.name,75,1055,60);line(t==="empresa"?n+(n===1?" ano de MCPack":" anos de MCPack"):dia(p)||rhFmtData(d),75,1140,55,"#F1C979");if(t==="empresa")line(p.job_title||"",75,1205,35)}
-  else{line(p.name,75,530,62);line("Período / Período",75,665,38);line(rhFmtData(ini)+" a "+rhFmtData(fim),75,745,52,"#F1C979");line("Responsável / Responsable",75,885,38);line(sub,75,970,52);line("Desejamos boas férias!",75,1140,42);line("¡Felices vacaciones!",75,1205,35)}
-  cv.style.display="block";down.disabled=false;msg.textContent="Prévia pronta. Revise antes de publicar."}catch(e){msg.textContent=e.message;cv.style.display="none"}};
+  // Modelos oficiais aprovados: arquivos PNG fixos, apenas os campos variáveis são substituídos.
+  const arquivos={aniv:"aniversario-02.png",empresa:"empresa-01.png",ferias:"ferias-02.png"};
+  const cache=new Map();
+  const base=async t=>{if(!cache.has(t)){const im=await image(arquivos[t]);if(im.naturalWidth!==1080||im.naturalHeight!==1350)throw Error("Dimensão inesperada do template.");const tmp=document.createElement("canvas");tmp.width=1080;tmp.height=1350;const ctx=tmp.getContext("2d",{willReadFrequently:true});ctx.drawImage(im,0,0);cache.set(t,ctx.getImageData(0,0,1080,1350))}return cache.get(t)};
+  const meses=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
+  let gerando=false;
+  q("gerar").onclick=async()=>{
+    if(gerando)return;
+    gerando=true;down.disabled=true;cv.style.display="none";msg.textContent="Gerando…";
+    const controls=[tipo,sel,data,q("inicio"),q("fim"),q("mec"),q("ele"),q("pro"),q("gerar")];controls.forEach(e=>e.disabled=true);
+    try{
+      if(!rhAreas.includes("rh_editar")||!rhAreas.includes("rh_pessoas"))throw Error("Sem permissão");
+      const p=lista.find(x=>String(x.id)===sel.value);if(!p)throw Error("Selecione um colaborador.");
+      const t=tipo.value,d=data.value,n=anos(p,d);if(!d)throw Error("Informe a data.");
+      if(t==="empresa"&&!n)throw Error("O colaborador ainda não completou um ano.");
+      if(t==="aniv"&&!dia(p))throw Error("O colaborador não possui aniversário cadastrado.");
+      const ini=q("inicio").value,fim=q("fim").value,subs=["mec","ele","pro"].map(k=>q(k).value.trim());
+      if(t==="ferias"&&(!ini||!fim||fim<ini||!subs.some(Boolean)))throw Error("Informe o período válido e pelo menos um contato.");
+      await Promise.all([400,500,600,700,800].map(w=>document.fonts.load(w+" 32px Poppins")));
+      const src=await base(t),g=cv.getContext("2d",{willReadFrequently:true});g.putImageData(src,0,0);
+      const output=g.getImageData(0,0,1080,1350),o=output.data,orig=src.data;
+      const aux=t==="empresa"?(await base("ferias")).data:orig;
+      const idx=(x,y)=>(y*1080+x)*4;
+      // Limpa somente as letras de exemplo, recompondo o pattern a partir dos próprios PNGs.
+      const bright=(a,i)=>a[i]>43||a[i+1]>103;
+      const erase=(x0,y0,x1,y1,candidates)=>{
+        for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+          const i=idx(x,y);let mask=false;
+          for(let dy=-1;dy<=1&&!mask;dy++)for(let dx=-1;dx<=1;dx++)if(bright(orig,idx(x+dx,y+dy))){mask=true;break}
+          if(!mask)continue;
+          let found=null;
+          for(const [arr,xx,yy] of candidates(x,y)){if(xx<0||xx>=1080||yy<0||yy>=1350)continue;const j=idx(xx,yy);if(!bright(arr,j)){found=[arr,j];break}}
+          if(!found){for(let k=2;k<=45&&!found;k++)for(const [xx,yy] of [[x-k,y],[x+k,y],[x,y-k],[x,y+k]]){if(xx<0||xx>=1080||yy<0||yy>=1350)continue;const j=idx(xx,yy);if(!bright(orig,j)){found=[orig,j];break}}}
+          if(found){o[i]=found[0][found[1]];o[i+1]=found[0][found[1]+1];o[i+2]=found[0][found[1]+2]}else{o[i]=3;o[i+1]=60;o[i+2]=124}
+        }
+      };
+      if(t==="aniv"){
+        erase(425,183,655,216,(x,y)=>[[orig,x,180],[orig,x,y+280]]);
+        erase(450,972,630,1058,(x,y)=>[[orig,x,y+280],[orig,x,y-840]]);
+      }else if(t==="empresa"){
+        erase(598,305,755,520,(x,y)=>[[aux,x,y]]);
+        if(n===1)erase(598,522,797,579,(x,y)=>[[aux,x,y]]);
+        erase(594,729,845,791,(x,y)=>[[aux,x,y-285],[orig,x,y-570]]);
+        erase(594,804,938,841,(x,y)=>[[aux,x,y-285],[orig,x,y-570]]);
+      }else{
+        erase(58,468,400,533,(x,y)=>[[orig,x,y-285]]);
+        erase(58,552,351,600,(x,y)=>[[orig,x,y-285]]);
+      }
+      g.putImageData(output,0,0);
+      const textFit=(v,x,y,size,color,weight,max,align="left")=>{
+        v=String(v||"");g.textAlign=align;g.textBaseline="alphabetic";g.fillStyle=color;
+        g.font=weight+" "+size+"px Poppins,sans-serif";
+        while(g.measureText(v).width>max&&size>14){size--;g.font=weight+" "+size+"px Poppins,sans-serif"}
+        g.fillText(v,x,y,max);
+      };
+      const white="#FFFFFF",gold="#F1C979",blue="#003B7A";
+      const foto=async(x,y,w,h,r,circle)=>{
+        if(!p.foto_url)throw Error("Colaborador sem foto cadastrada.");
+        const im=await image(p.foto_url),scale=Math.max(w/im.naturalWidth,h/im.naturalHeight),sw=w/scale,sh=h/scale;
+        g.save();g.beginPath();if(circle)g.arc(x+w/2,y+h/2,w/2,0,Math.PI*2);else g.roundRect(x,y,w,h,r);g.clip();g.drawImage(im,(im.naturalWidth-sw)/2,(im.naturalHeight-sh)/2,sw,sh,x,y,w,h);g.restore();
+      };
+      if(t==="aniv"){
+        const [day,month]=dia(p).split("/");if(!meses[Number(month)-1])throw Error("Aniversário inválido.");
+        await foto(277,410,526,526,0,true);
+        textFit(day+" DE "+meses[Number(month)-1],540,210,26,gold,600,920,"center");
+        textFit(p.name,540,1049,86,white,700,950,"center");
+      }else if(t==="empresa"){
+        await foto(64,235,471,641,25,false);
+        textFit(n,600,510,260,gold,800,410);
+        if(n===1)textFit("ANO",602,573,62,white,700,410);
+        textFit(p.name,600,783,62,white,700,417);
+        textFit(p.cargo_oficial||p.job_title||"",600,833,30,white,500,417);
+      }else{
+        const dt=v=>v.slice(8,10)+" "+meses[Number(v.slice(5,7))-1].slice(0,3);
+        const periodo=ini.slice(0,7)===fim.slice(0,7)?ini.slice(8,10)+" — "+dt(fim):dt(ini)+" — "+dt(fim)+(ini.slice(0,4)!==fim.slice(0,4)?" "+fim.slice(0,4):"");
+        textFit(p.name,64,524,64,white,700,950);textFit(periodo,64,592,44,gold,600,950);
+        const ys=[792,847,902,1044,1099,1154];
+        for(let i=0;i<6;i++){g.fillStyle="#FFFFFF";g.fillRect(420,ys[i]-33,565,42);textFit(subs[i%3]||"—",984,ys[i],27,blue,600,550,"right")}
+      }
+      if(!rhAreas.includes("rh_editar")||!rhAreas.includes("rh_pessoas")||!cv.isConnected)throw Error("Sessão ou tela alterada.");
+      cv.style.display="block";down.disabled=false;msg.textContent="Prévia pronta · template oficial. Revise antes de publicar.";
+    }catch(e){msg.textContent=e.message;cv.style.display="none";down.disabled=true}
+    finally{gerando=false;controls.forEach(e=>e.disabled=false)}
+  };
   down.onclick=()=>{if(!rhAreas.includes("rh_editar")||!rhAreas.includes("rh_pessoas"))return;cv.toBlob(b=>{if(!b){msg.textContent="Falha ao exportar.";return}const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="mcpack-"+tipo.value+"-"+sel.value+".png";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)},"image/png")};
 }
 
