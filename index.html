@@ -1713,13 +1713,33 @@ async function rhRenderArtes(c) {
   const {pessoas}=await rhCall("pessoas_list");
   if(!rhAreas.includes("rh_editar") || !rhAreas.includes("rh_pessoas")) return;
   const lista=pessoas.filter(p=>p.active);
-  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><select id="arte-pessoa"></select></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div style="min-width:210px;max-width:100%"><label>Responsáveis substitutos</label><details id="arte-resp" style="position:relative;width:340px;max-width:100%"><summary style="cursor:pointer;min-height:40px;padding:10px 12px;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);color:var(--text);font-size:13px">Selecionar responsáveis</summary><div style="border:1px solid var(--input-bd);border-radius:10px;background:var(--white);padding:8px;margin-top:4px"><input type="search" placeholder="Buscar colaborador" aria-label="Buscar colaborador" style="width:100%;margin-bottom:6px"><div data-list style="max-height:210px;overflow:auto"></div></div></details></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
+  c.innerHTML='<div class="admin-card"><div class="admin-card-h">Central de Artes · RH</div><div class="rh-filtros"><div><label>Tipo de arte</label><select id="arte-tipo"><option value="aniv">Aniversário</option><option value="empresa">Tempo de empresa</option><option value="ferias">Férias</option></select></div><div><label>Colaborador</label><select id="arte-pessoa"></select></div><div><label>Data de referência</label><input id="arte-data" type="date"></div></div><div id="arte-ferias" class="rh-filtros" hidden><div><label>Início das férias</label><input id="arte-inicio" type="date"></div><div><label>Fim das férias</label><input id="arte-fim" type="date"></div><div style="min-width:210px;max-width:100%"><label>Responsáveis substitutos</label><details id="arte-resp" style="position:relative;width:340px;max-width:100%"><summary class="rh-arte-select-trigger" style="cursor:pointer;box-sizing:border-box;height:40px;padding:0 12px;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);color:var(--text);font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px">Selecionar responsáveis</summary><div data-popup style="position:fixed;z-index:9999;box-sizing:border-box;border:1px solid var(--input-bd);border-radius:10px;background:var(--white);padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)"><input type="search" placeholder="Buscar colaborador" aria-label="Buscar colaborador" style="width:100%;margin-bottom:6px"><div data-list style="max-height:210px;overflow:auto"></div></div></details></div></div><p id="arte-eventos"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-save" id="arte-gerar">Gerar prévia</button><button class="btn-save" id="arte-baixar" disabled>Baixar PNG</button></div><p id="arte-msg" role="status"></p><canvas id="arte-canvas" width="1080" height="1350" style="display:none;max-width:100%;width:432px;height:auto;margin:16px auto"></canvas></div>';
   const q=id=>c.querySelector("#arte-"+id), tipo=q("tipo"), sel=q("pessoa"), data=q("data"), cv=q("canvas"), msg=q("msg"), down=q("baixar");
   const local=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>local.find(x=>x.type===k).value;data.value=part("year")+"-"+part("month")+"-"+part("day");
   const dia=p=>p.data_nascimento? p.data_nascimento.slice(8,10)+"/"+p.data_nascimento.slice(5,7):String(p.aniversario||"").slice(0,5);
   const anos=(p,d)=>{if(!p.data_admissao||!d||d<p.data_admissao)return 0;return +d.slice(0,4)-+p.data_admissao.slice(0,4)-(d.slice(5)<p.data_admissao.slice(5,10)?1:0)};
   function refresh(){q("ferias").hidden=tipo.value!=="ferias";q("ferias").style.display=tipo.value==="ferias"?"flex":"none";const d=data.value, dd=d.slice(8,10)+"/"+d.slice(5,7);const matches=lista.filter(p=>tipo.value==="aniv"?dia(p)===dd:tipo.value==="empresa"?p.data_admissao?.slice(5,10)===d.slice(5)&&anos(p,d)>0:false);const ids=new Set(matches.map(p=>p.id));const prev=sel.value;sel.replaceChildren();for(const p of [...matches,...lista.filter(p=>!ids.has(p.id))]){const o=new Option((ids.has(p.id)?"★ ":"")+p.name,String(p.id));sel.add(o)}if(prev&&[...sel.options].some(o=>o.value===prev))sel.value=prev;q("eventos").textContent=tipo.value==="ferias"?"Informe o período e a cobertura.":matches.length+" comemoração(ões) na data selecionada.";down.disabled=true;cv.style.display="none"}
   
+  const dropdown=q("resp"), trigger=dropdown.querySelector("summary"), popup=dropdown.querySelector("[data-popup]"), scrollList=popup.querySelector("[data-list]");
+  const style=document.createElement("style");style.textContent="#arte-resp summary::-webkit-details-marker{display:none} #arte-resp summary::after{content:'';width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-left:auto;flex:none} #arte-resp[open] summary::after{transform:rotate(225deg)} #arte-resp:not([open]) [data-popup]{display:none}";dropdown.append(style);
+  function posicionarResponsaveis(){
+    if(!dropdown.open||!dropdown.isConnected)return;
+    const r=trigger.getBoundingClientRect(), vw=document.documentElement.clientWidth,vh=window.innerHeight;
+    const w=Math.min(Math.max(r.width,300),vw-16), abaixo=vh-r.bottom-12, acima=r.top-12, subir=abaixo<180&&acima>abaixo;
+    const altura=Math.max(70,Math.min(280,subir?acima:abaixo));
+    popup.style.width=w+"px";popup.style.left=Math.max(8,Math.min(r.left,vw-w-8))+"px";
+    scrollList.style.maxHeight=Math.max(35,altura-62)+"px";
+    popup.style.top=subir?"auto":(r.bottom+4)+"px";popup.style.bottom=subir?(vh-r.top+4)+"px":"auto";
+  }
+  const fecharResponsaveis=()=>{dropdown.open=false};
+  dropdown.addEventListener("toggle",()=>{if(dropdown.open){posicionarResponsaveis();popup.querySelector("input[type=search]").focus({preventScroll:true})}});
+  const eventos=new AbortController(), opt={signal:eventos.signal};
+  document.addEventListener("pointerdown",e=>{if(!dropdown.isConnected){eventos.abort();return}if(!dropdown.contains(e.target))fecharResponsaveis()},opt);
+  document.addEventListener("keydown",e=>{if(!dropdown.isConnected){eventos.abort();return}if(e.key==="Escape"&&dropdown.open){fecharResponsaveis();trigger.focus()}},opt);
+  window.addEventListener("resize",posicionarResponsaveis,opt);
+  document.addEventListener("scroll",posicionarResponsaveis,{capture:true,signal:eventos.signal});
+  const observer=new MutationObserver(()=>{if(!dropdown.isConnected){eventos.abort();observer.disconnect()}});observer.observe(c,{childList:true,subtree:true});
+  sel.addEventListener("pointerdown",fecharResponsaveis);
   const grupos=["resp"], escolhas=new Map(grupos.map(k=>[k,new Set()]));
   const invalidar=()=>{down.disabled=true;cv.style.display="none";msg.textContent=""};
   function montarResponsaveis(){
@@ -1743,8 +1763,8 @@ async function rhRenderArtes(c) {
       search.oninput=render;render();atualizar();
     }
   }
-  tipo.onchange=data.onchange=()=>{refresh();montarResponsaveis();invalidar()};
-  sel.onchange=()=>{montarResponsaveis();invalidar()};
+  tipo.onchange=data.onchange=()=>{fecharResponsaveis();refresh();montarResponsaveis();invalidar()};
+  sel.onchange=()=>{fecharResponsaveis();montarResponsaveis();invalidar()};
   for(const k of ["inicio","fim"])q(k).oninput=invalidar;
   refresh();montarResponsaveis();
 
