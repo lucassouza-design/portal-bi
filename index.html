@@ -717,7 +717,9 @@ function gruposMenu() {
   if (rh.length) g.push({ k: "rh", t: "Área do RH", r: "RH", i: "people", itens: rh });
   if (currentPages.length) g.push({ k: "dash", t: "Dashboards", r: "Dashb.", i: "chart", itens: [...currentPages].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" })).map(pg => ({ k: "dash:" + pg.key, l: pg.label, i: "chart", fn: () => abrirPagina(pg.key) })) });
   if (isAdmin()) g.push({ k: "admin", t: "Administração", r: "Admin", i: "shield", itens: [{ k: "admin", l: "Usuários e acessos", i: "shield", fn: irParaAdmin }] });
-  return g;
+  const az = (a,b) => a.localeCompare(b, "pt-BR", { sensitivity: "base", numeric: true });
+  g.forEach(grupo => grupo.itens.sort((a,b) => az(a.l,b.l)));
+  return g.sort((a,b) => az(a.t,b.t));
 }
 function grupoDaChave(k) {
   if (k === "home") return "home";
@@ -811,7 +813,7 @@ function mostrarHub() {
     admin: { t: "Administração", d: "Usuários, acessos e páginas liberadas.", i: "shield", fn: "irParaAdmin()" },
     dash: { t: "Dashboards", d: "Indicadores comerciais, financeiros e de operação.", i: "chart", fn: "entrarDashboards()" }
   };
-  document.getElementById("hub-cards").innerHTML = entradasDisponiveis().map(k => {
+  document.getElementById("hub-cards").innerHTML = entradasDisponiveis().sort((a,b) => defs[a].t.localeCompare(defs[b].t, "pt-BR", { sensitivity: "base", numeric: true })).map(k => {
     const d = defs[k];
     return '<button class="hubcard" onclick="' + d.fn + '"><span class="hubic">' + svgIcone(d.i).replace("<svg ", '<svg width="30" height="30" ') + '</span><h3>' + d.t + '</h3><p>' + d.d + '</p><span class="hubgo">Abrir →</span></button>';
   }).join("");
