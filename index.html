@@ -905,7 +905,7 @@ function rhTempoEmpresa(inicio, fim) {
 
 // Cabeçalho + cartões de dados, usado em "Meus dados" e no card do funcionário (RH).
 function rhPerfilHtml(d, opt) {
-  const campos = [["mail", "E-mail corporativo", d.work_email], ["phone", "Telefone", d.telefone_trabalho || d.celular], ["cal", "Admissão", d.data_admissao ? rhFmtData(d.data_admissao) : null], ["cal", "Aniversário", d.aniversario], ["cal", "Tempo de empresa", rhTempoEmpresa(d.data_admissao, d.data_saida)]];
+  const campos = [["mail", "E-mail corporativo", d.work_email], ["phone", "Telefone", d.telefone_trabalho || d.celular], ["cal", "Admissão", d.data_admissao ? rhFmtData(d.data_admissao) : null], ["cal", "Nascimento", d.data_nascimento ? rhFmtData(d.data_nascimento) : d.aniversario], ["cal", "Tempo de empresa", rhTempoEmpresa(d.data_admissao, d.data_saida)]];
   if (opt.rh) {
     if (d.data_saida) campos.push(["cal", "Saída", rhFmtData(d.data_saida)]);
     campos.push(["id", "Acesso ao portal", d.portal ? d.portal.username + (d.portal.ativo ? "" : " (inativo)") : "Sem acesso"]);
@@ -959,7 +959,7 @@ function rhDesenharPessoas(c) {
       { label: "Matrícula", num: true, get: p => p.matricula || "", html: p => '<strong>' + esc(p.matricula || "—") + '</strong>' },
       { label: "Nome", get: p => p.name, html: p => '<div class="pes-n"><span class="avatar' + (p.foto_url ? " foto" : "") + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : "") + '>' + esc(iniciaisDe(p.name)) + '</span><span>' + esc(p.name) + '</span></div>' },
       { label: "Departamento", get: p => p.department_name || "" },
-      { label: "Aniversário", get: p => p.aniversario || "", sortv: p => p.aniversario ? p.aniversario.split("/").reverse().join("") : "" },
+      { label: "Nascimento", get: p => p.data_nascimento ? rhFmtData(p.data_nascimento) : (p.aniversario || ""), sortv: p => p.data_nascimento || "" },
       { label: "Admissão", get: p => p.data_admissao ? rhFmtData(p.data_admissao) : "", sortv: p => p.data_admissao || "", html: p => p.data_admissao ? rhFmtData(p.data_admissao) : "—" },
       { label: "Tempo de empresa", get: p => rhTempoEmpresa(p.data_admissao, p.data_saida) },
       { label: "Demissão", get: p => p.data_saida ? rhFmtData(p.data_saida) : "", sortv: p => p.data_saida || "", html: p => p.data_saida ? rhFmtData(p.data_saida) : "—" },
