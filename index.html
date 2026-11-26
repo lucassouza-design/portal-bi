@@ -962,7 +962,7 @@ function rhDesenharPessoas(c) {
       { label: "Departamento", get: p => p.department_name || "" },
       { label: "Nascimento", get: p => p.data_nascimento ? rhFmtData(p.data_nascimento) : (p.aniversario || ""), sortv: p => p.data_nascimento || "" },
       { label: "Admissão", get: p => p.data_admissao ? rhFmtData(p.data_admissao) : "", sortv: p => p.data_admissao || "", html: p => p.data_admissao ? rhFmtData(p.data_admissao) : "—" },
-      { label: "Tempo de empresa", get: p => rhTempoEmpresa(p.data_admissao, p.data_saida) },
+      { label: "Tempo de empresa", get: p => rhTempoEmpresa(p.data_admissao, p.data_saida), sortv: p => p.data_admissao ? String(Math.max(0, Math.round((new Date(p.data_saida || new Date()) - new Date(p.data_admissao))/86400000))).padStart(7,"0") : "" },
       { label: "Demissão", get: p => p.data_saida ? rhFmtData(p.data_saida) : "", sortv: p => p.data_saida || "", html: p => p.data_saida ? rhFmtData(p.data_saida) : "—" },
       { label: "Status", get: p => p.active ? "Ativo" : "Inativo", html: p => '<span class="toggle-label ' + (p.active ? "ativo" : "inativo") + '">' + (p.active ? "Ativo" : "Inativo") + '</span>' },
       { label: "Portal", get: portalTxt, html: p => p.portal ? '<span class="badge-page">' + esc(p.portal.username) + (p.portal.ativo ? "" : " · inativo") + '</span>' : '<span class="badge-page" style="color:var(--danger)">sem acesso</span>' }
@@ -1747,6 +1747,6 @@ carregarSessao();
   document.addEventListener('visibilitychange',sync);if(reduced.addEventListener)reduced.addEventListener('change',sync);sync();
 })();
 </script>
-<script src="i18n.js?v=20261126b"></script>
+<script src="i18n.js?v=20261126d"></script>
 </body>
 </html>
