@@ -1,0 +1,17 @@
+{
+  "name": "Massagem e bem-estar MCPack",
+  "short_name": "Massagem",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f4f8",
+  "theme_color": "#144387",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
