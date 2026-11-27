@@ -855,11 +855,31 @@ function abrirMassagem() {
   c.innerHTML = `<div class="well-wrap">
     <div class="admin-card well-hero"><div class="well-icon">${svgIcone("wellness")}</div><div><h1>Massagem e bem-estar</h1><p>Programa de qualidade de vida MCPack</p><span class="well-tag">Prévia de desenvolvimento</span></div></div>
     <div class="well-grid">
-      <div class="admin-card well-card"><h2>Agendar massagem</h2><p>Atendimentos normalmente às terças-feiras.</p><div class="well-note"><strong>Agendamento ainda indisponível</strong><p>A integração com o Teams está em preparação. Nenhuma reserva real será criada.</p></div><div class="well-schedule"><div class="well-schedule-head"><div class="well-icon">${svgIcone("wellness")}</div><div><strong>Massagem e bem-estar</strong><p>Terças-feiras · 09h às 13h</p></div></div><div class="well-stats"><div><span>Duração por atendimento</span><strong>15 min</strong></div><div><span>Vagas por dia</span><strong>16</strong></div></div><hr><h3>Horários</h3><div class="well-slots">${Array.from({length:16},(_,i)=>String(9+Math.floor(i/4)).padStart(2,"0")+":"+String((i%4)*15).padStart(2,"0")).map(t=>'<button type="button" disabled>'+t+'</button>').join("")}</div><p>Último atendimento: 12h45 às 13h.</p></div><button class="well-primary" type="button" disabled>Confirmar agendamento</button><button class="well-secondary" type="button" disabled>Não desejo agendar</button></div>
+      <div class="admin-card well-card"><h2>Agendar massagem</h2><p>Atendimentos normalmente às terças-feiras.</p><div class="well-note" id="massagem-status" role="status"><strong>Consultando agenda…</strong><p>Conexão segura com o servidor.</p></div><div class="well-schedule"><div class="well-schedule-head"><div class="well-icon">${svgIcone("wellness")}</div><div><strong>Massagem e bem-estar</strong><p>Terças-feiras · 09h às 13h</p></div></div><div class="well-stats"><div><span>Duração por atendimento</span><strong>15 min</strong></div><div><span>Vagas por dia</span><strong>16</strong></div></div><hr><h3>Horários</h3><div class="well-slots">${Array.from({length:16},(_,i)=>String(9+Math.floor(i/4)).padStart(2,"0")+":"+String((i%4)*15).padStart(2,"0")).map(t=>'<button type="button" disabled>'+t+'</button>').join("")}</div><p>Último atendimento: 12h45 às 13h.</p></div><button class="well-primary" type="button" disabled>Confirmar agendamento</button><button class="well-secondary" type="button" disabled>Não desejo agendar</button></div>
       <div class="admin-card well-card"><h2>Meu agendamento</h2><p>Nenhum agendamento confirmado.</p><button class="well-secondary" type="button" disabled>Adicionar ao Outlook</button><button class="well-secondary" type="button" disabled>Cancelar agendamento</button><h3>Como funciona</h3><p>Os participantes da reunião de autocuidado terão prioridade por um período limitado. Depois, os horários restantes serão liberados aos demais colaboradores.</p></div>
     </div>
     <div class="admin-card well-card"><h2>Agenda de atendimentos</h2><p>Prévia da visão da Renata. Nenhum dado real disponível.</p><div class="well-note">A lista de reservas será exibida aqui após a integração. O acesso independente da Renata ainda não está habilitado.</div></div>
   </div>`;
+  massagemCarregarStatus(c);
+}
+async function massagemCarregarStatus(c) {
+  const status=c.querySelector("#massagem-status");
+  if(!status) return;
+  try {
+    const r=await fetch("https://igsoruvlyvydocdfatde.supabase.co/functions/v1/massagem-api",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+currentToken},body:JSON.stringify({action:"status"})
+    });
+    const d=await r.json();
+    if(!r.ok||!d.ok) throw new Error("Falha de consulta");
+    if(!status.isConnected||!massagemPreviewPermitida()) return;
+    status.replaceChildren();
+    const title=document.createElement("strong");title.textContent="Integração Teams conectada";
+    const p=document.createElement("p");
+    p.textContent=d.week?"Atendimento em "+rhFmtData(d.week.date)+" · "+d.week.matched+" colaboradores identificados. Reservas bloqueadas nesta prévia.":"Aguardando a próxima reunião de autocuidado. Reservas bloqueadas nesta prévia.";
+    status.append(title,p);
+  } catch {
+    if(status.isConnected) status.textContent="Não foi possível consultar a agenda. Nenhuma reserva foi criada.";
+  }
 }
 function rhFmtData(v) { if (!v) return "—"; const d = new Date(v.length === 10 ? v + "T00:00:00" : v); return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR"); }
 function rhTipoLabel(k) { const t = rhTipos.find(x => x.key === k); return t ? t.label : k; }
