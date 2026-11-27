@@ -14,6 +14,11 @@
   var LANG = pick();
 
   var DICT = {
+    "Terças-feiras · 09h às 13h": ["Tuesdays · 9 am to 1 pm","Martes · 09:00 a 13:00"],
+    "Duração por atendimento": ["Session duration","Duración por sesión"],
+    "Vagas por dia": ["Slots per day","Cupos por día"],
+    "Horários": ["Times","Horarios"],
+    "Último atendimento: 12h45 às 13h.": ["Last session: 12:45 pm to 1 pm.","Última sesión: 12:45 a 13:00."],
     /* Massagem: prévia */
     "Massagem": ["Massage","Masaje"],
     "Mass.": ["Mass.","Mas."],
