@@ -14,6 +14,30 @@
   var LANG = pick();
 
   var DICT = {
+    /* Massagem: prévia */
+    "Massagem": ["Massage","Masaje"],
+    "Mass.": ["Mass.","Mas."],
+    "Massagem e bem-estar": ["Massage and well-being","Masaje y bienestar"],
+    "Agende seu horário semanal de bem-estar.": ["Book your weekly wellness session.","Reserva tu sesión semanal de bienestar."],
+    "Programa de qualidade de vida MCPack": ["MCPack well-being program","Programa de bienestar MCPack"],
+    "Prévia de desenvolvimento": ["Development preview","Vista previa de desarrollo"],
+    "Agendar massagem": ["Book a massage","Reservar masaje"],
+    "Atendimentos normalmente às terças-feiras.": ["Sessions usually take place on Tuesdays.","Las sesiones suelen realizarse los martes."],
+    "Agendamento ainda indisponível": ["Booking not yet available","Reservas aún no disponibles"],
+    "A integração com o Teams está em preparação. Nenhuma reserva real será criada.": ["Teams integration is being prepared. No actual booking will be created.","La integración con Teams está en preparación. No se creará ninguna reserva real."],
+    "Horários disponíveis": ["Available times","Horarios disponibles"],
+    "Exemplos de horários, sujeitos à programação definitiva.": ["Sample times, subject to the final schedule.","Horarios de ejemplo, sujetos a la programación definitiva."],
+    "Confirmar agendamento": ["Confirm booking","Confirmar reserva"],
+    "Não desejo agendar": ["I do not want to book","No deseo reservar"],
+    "Meu agendamento": ["My booking","Mi reserva"],
+    "Nenhum agendamento confirmado.": ["No confirmed booking.","No hay reservas confirmadas."],
+    "Adicionar ao Outlook": ["Add to Outlook","Añadir a Outlook"],
+    "Cancelar agendamento": ["Cancel booking","Cancelar reserva"],
+    "Como funciona": ["How it works","Cómo funciona"],
+    "Os participantes da reunião de autocuidado terão prioridade por um período limitado. Depois, os horários restantes serão liberados aos demais colaboradores.": ["Participants in the self-care meeting will have priority for a limited period. Remaining times will then be opened to other employees.","Los participantes de la reunión de autocuidado tendrán prioridad durante un período limitado. Después, los horarios restantes estarán disponibles para los demás colaboradores."],
+    "Agenda de atendimentos": ["Session schedule","Agenda de sesiones"],
+    "Prévia da visão da Renata. Nenhum dado real disponível.": ["Preview of Renata’s view. No real data available.","Vista previa de Renata. No hay datos reales disponibles."],
+    "A lista de reservas será exibida aqui após a integração. O acesso independente da Renata ainda não está habilitado.": ["The booking list will appear here after integration. Renata’s independent access is not yet enabled.","La lista de reservas aparecerá aquí después de la integración. El acceso independiente de Renata aún no está habilitado."],
     /* login */
     'Acesso restrito a colaboradores MCPack': ['Access restricted to MCPack employees', 'Acceso restringido a colaboradores MCPack'],
     'Acesse com suas credenciais corporativas.': ['Sign in with your corporate credentials.', 'Acceda con sus credenciales corporativas.'],
